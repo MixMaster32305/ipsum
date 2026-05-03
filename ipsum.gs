@@ -1,6 +1,6 @@
 //ipsum - An all-in-one session manager and tool for the game Grey Hack.
 //By Main Hub/The_MixMaster
-//License: AGPL - 
+//License: AGPL - https://github.com/MixMaster32305/ipsum/blob/main/LICENSE
 g = get_custom_object
 
 if not g.hasIndex("stack") then g.stack = {}
