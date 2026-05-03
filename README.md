@@ -1,7 +1,6 @@
 # ipsum - An easy to install and easy to use all-in-one tool for the game Grey Hack.
 
 > **Disclaimer**: ipsum is made specifically for use in the videogame Grey Hack on steam which is a simulated hacking environment. This tool is not applicable to any forms of real life hacking nor cybersecurity endeavors and must never be repurposed for any purposes illegal, malicious, or otherwise destructive. Grey Hack is a sandbox game that allows users to learn cybersecurity concepts in a safe, simulated environment.
-An all-in-one session manager and tool for the game Grey Hack.
 
 ---
 
