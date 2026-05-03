@@ -297,9 +297,9 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "142.255.103.118"
+    ip = "xx.xxx.xx.xxx"
     user = "root"
-    password = "Tiger"
+    password = "chud"
     port = 22
 
     connection = current_shell.connect_service(ip, port, user, password, "ssh")
@@ -845,7 +845,10 @@ if parameter_list[0] == "-l" then
 	isLocal = true
 end if
 
-if current_session.metax == null then loadMetax(current_session)
+if current_session.metax == null then
+    print("Metax not loaded for current session. Use [jump] to load.")
+    return 0
+end if
 metax = current_session.metax
 hostComputer = g.stack[0].object.host_computer
 hostMetax = g.stack[0].metax
@@ -857,6 +860,7 @@ if hostComputer.File("/Databases") == null then
 		print("/Databases folder created...")
 	else
 		print("Failed to create /Databases folder...")
+        return 0
 	end if
 end if
 
@@ -935,7 +939,10 @@ if isLocal == true and parameter_list.len == 3 then
 	useLanIP = true
 end if
 
-if current_session.metax == null then loadMetax(current_session)
+if current_session.metax == null then
+     print("No metax loaded in current session, use [jump] to load.")
+     return 0
+end if
 metax = current_session.metax
 
 address = parameter_list[0]
@@ -1129,7 +1136,7 @@ if database_matched == false then
 	else
 		createDBResult = user_input("\nNo pre-existing database found, create one?\n(Y) or (N) : ")
 		if (createDBResult == "y" or createDBResult == "Y")then
-			createCache(current_session, parameter_list)
+			createCache(current_session, [parameter_list[0], parameter_list[1]]) //Prevents failure when using -l /lib lanIP
             testDatabase(current_session, parameter_list)
 			print("End: testdatabase")
 
@@ -2123,8 +2130,8 @@ nethack = function(current_session)
     
     lib = "/lib/init.so"
     libVersion = "1.0.4"
-    mem_value = "0x6E580283"
-    vuln_value = "equalby"
+    mem_value = "0x3A986814"
+    vuln_value = "dividen"
     libFolder = routerComputer.File("/lib")
     fullLib = routerComputer.File("/lib/init.so")
     
