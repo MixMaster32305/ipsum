@@ -27,10 +27,10 @@ chainsaw is only necessary to use the privilege escalation component of targeted
 These commands use hard-coded values, so to use them you first need to go into the code and find the nethack function or the connect function respectively.
 
 ### Nethack
-Nethack uses a hardcoded value from your init.so library that it'll transfer to a router for exploitation. First, run targetedhack -l /lib/init.so on your local PC to find a computer bounce exploit, then go to the nethack function in ipsum's code and find the following variables: **libVersion**, **mem_value**, **vuln_value** and edit these with the memory region/vuln value of one of the found bounce exploits, and change libVersion to that of your init.so library (can check using checklibs command)
+Nethack uses a hardcoded value from your init.so library that it'll transfer to a router for exploitation. First, run targetedhack -l /lib/init.so on your local PC to find a computer bounce exploit, then go to the nethack function in ipsum's code and find the following variables: **libVersion**, **mem_value**, **vuln_value** (ctrl + f and search for "nethack =")and edit these with the memory region/vuln value of one of the found bounce exploits, and change libVersion to that of your init.so library (can check using checklibs command)
 
 ### Connect
-Connect automatically connects you to your remote server and loads its metax. Find the variables **ip** and **password** in ipsum's connect function and change them to those of your remote server.
+Connect automatically connects you to your remote server and loads its metax. Find the variables **ip** and **password** in ipsum's connect function (ctrl + f and search for "connect =") and change them to those of your remote server.
 
 ---
 
