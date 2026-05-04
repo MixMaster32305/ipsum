@@ -38,7 +38,7 @@ printHelpInfo = function()
 <color=#F2AFFF>nethack</color> : Usage-- <color=#FFFFFF>nethack</color> --: <color=#3DF19D>Gathers emails, passwords, bank information from every local device connect to the router this is ran on. Note: This command uses a hard-coded exploit for the init.so library resident on your host PC. Edit libVersion, mem_value, and vuln_value in the nethack function before use.</color>\n
 <color=#F2AFFF>sniffer</color> : Usage-- <color=#FFFFFF>sniffer</color> --: <color=#3DF19D>Starts a sniffer listener on the current session. Cannot be canceled once started.</color>\n
 <color=#F2AFFF>admon</color> : Usage-- <color=#FFFFFF>admon</color> --: <color=#3DF19D>Starts AdminMonitor.exe from /usr/bin.</color>\n
-<color=#F2AFFF>rshell-server</color> : Usage-- <color=#FFFFFF>rshell-server</color> --: S<color=#3DF19D>tarts an rshell-server service on the current session device and opens the browser so you can forward port 1222. Note, must use [libs] to bring librshell.so and metaxploit.so over first.</color>\n
+<color=#F2AFFF>rshell-server</color> : Usage-- <color=#FFFFFF>rshell-server</color> --: <color=#3DF19D>Starts an rshell-server service on the current session device and opens the browser so you can forward port 1222. Note, must use [libs] to bring librshell.so and metaxploit.so over first.</color>\n
 <color=#F2AFFF>rshell-interface</color> : Usage-- <color=#FFFFFF>rshell-interface</color> --: <color=#3DF19D>Lets you select a connected rshell-client shell to add as a session. Can type 'exit' to leave without picking an option.</color>\n
 <color=#F2AFFF>rshell-stop</color> : Usage-- <color=#FFFFFF>rshell-stop</color> --: <color=#3DF19D>Stops a currently running rshell service and opens the browser so you can unforward port 1222.</color>\n
 <color=#F2AFFF>rshell-client</color> : Usage-- <color=#FFFFFF>rshell-client [public ip to rshell server]</color> --: <color=#3DF19D>Starts an rshell client daemon on the current session's pc pointed towards the given public IP.</color>\n
@@ -1179,7 +1179,6 @@ end if
 //Executing the overflow.
 selected_entry = file_contents[selected_int.val - 1]
 memory_address = selected_entry[5]
-print(memory_address)
 overflow_value = selected_entry[6]
 
 if is_local == true and useLanIP == true then
