@@ -49,7 +49,7 @@ Connect automatically connects you to your remote server and loads its metax. Fi
 # Commands
 
 ### `nmap`
-Scans a public or lan IP for ports. Will report both forwarded and internal ports. Scanning lan IPs uses a jump file and thus require metax to be loaded first through [jump]
+Scans a public or lan IP for ports. Will report both forwarded and internal ports. Scanning lan IPs uses a jump file which are deleted once used.
 ```
 nmap [ip address]
 ```
@@ -60,7 +60,7 @@ nmap 42.32.76.140
 ---
 
 ### `targetedhack`
-Begins an attack on a specific port of a target ip address, will present exploit options to choose from after (a computer exploit will open a computer-interaction submenu, file exploits will read the contents of all gained files). Also allows for exploiting local lib vulnerabilities and jump exploits. Can call createcache and testdatabase automatically if a database cache file for the targeted service version or library is not found. Can also use "exit" during exploit selection to back out without launching an attack.
+Begins an attack on a specific port of a target ip address and will present exploit options to choose from after (a computer exploit will open a computer-interaction submenu, file exploits will read the contents of all gained files). Also allows for exploiting local lib vulnerabilities and bounce exploits. Can call createcache and testdatabase automatically if a database cache file for the targeted service version or library is not found. Can also use "exit" during exploit selection to back out without launching an attack.
 ```
 targetedhack [ip address] [port]
 targetedhack -l [lib path]
@@ -79,13 +79,11 @@ Scans a service version or library for their vulnerabilities and stores them in 
 ```
 createcache [ip address] [port]
 createcache -l [lib path]
-createcache -l [lib path] [connected lan ip]
 ```
 **Examples:**
 ```
 createcache 42.32.76.140 22
 createcache -l /lib/init.so
-createcache -l /lib/init.so 42.32.76.140
 ```
 ---
 
@@ -123,7 +121,6 @@ sudo [username] [password]
 sudo root Ehackitt
 ```
 ---
-
 
 ### `ssh`
 Allows you to connect to an ssh shell and add it as a session.
@@ -285,7 +282,7 @@ checklibs -l /root/SafeLibs/init.so
 ---
 
 ### `readdatabase`
-Gives you the option to read any of the databases in the /Databases folder with targetedhack's usual format.
+Gives you the option to read any of the databases in the /Databases folder with targetedhack's usual formatting.
 
 **Example:**
 ```
