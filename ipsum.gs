@@ -1126,6 +1126,11 @@ if database_matched == false then
 				end if
 			end for
 
+            if database_matched == false then
+                print("targetedhack failed to find a usable database. Canceling...")
+                return 0
+            end if
+
 		else
 		print("Exiting program...\n")
 		return 0
@@ -1148,6 +1153,11 @@ if database_matched == false then
 					database_matched = true
 				end if
 			end for
+
+            if database_matched == false then
+                print("targetedhack failed to find a usable database. Canceling...")
+                return 0
+            end if
 
 		else
 		print("Exiting program...\n")
