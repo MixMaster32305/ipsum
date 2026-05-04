@@ -46,6 +46,31 @@ Connect automatically connects you to your remote server and loads its metax. Fi
 
 ---
 
+# Optional Dependency : Chainsaw by NitroCynic
+**Original Github page for Chainsaw:** https://github.com/jwfraustro/chainsaw
+
+Chainsaw is a markov chain password cracker, it lets you brute force NPC passwords in case you can't reach root any other way (or just want to do it quickly).
+
+Considering the size of Chainsaw, it wasn't feasible to include it as a jump script inside of ipsum, so I'm leaving it as an optional dependency you can build for yourself if you'd like to use it. The version in this repo is a modified version which removes the logo, changes some operators that greybel would usually translate for you, and joins the pregens/samples into single lines so the in-game IDE will accept them. What this means is you can import it manually without tools.
+
+To setup a build of chainsaw:
+```
+1. create a /data folder on your home machine.
+
+2. Inside the /data folder, create three source files: chainsaw.src, pregens.src, and samples.src
+
+3. In the Optional dependency (chainsaw) folder of this repo, ctrl + a, copy, then paste the
+   respective files into the respective source files and save each one separately.
+
+4. With the source files populated, open chainsaw.src and make a build of it, store it in
+   /bin and name it "chainsaw" so targetedhack can recognize it.
+```
+To run chainsaw manually, just upload and use "chainsaw run". Otherwise, targetedhack will do this automatically during privilege escalation.
+
+**A big thank you to NitroCynic/jwfraustro for making and sharing chainsaw, it's a great tool. Use the link above to give a star to his project or report bugs if you'd like.**
+
+---
+
 # Commands
 
 ### `nmap`
