@@ -6,8 +6,7 @@ g = get_custom_object
 if not g.hasIndex("stack") then g.stack = {}
 
 //Object is only shells for now. Computers and files handled by targetedhack switch statement.
-Session = {"metaLib" : null,
-            "metax": null,
+Session = { "metax": null,
             "router":null,
             "computerName":null,
             "publicAddress" : null,
@@ -1044,7 +1043,10 @@ if parameter_list.len > 3 or parameter_list.len < 2 or parameter_list[0] == "-h"
     return 0
 end if
 
-if current_session.metax == null then loadMetax(current_session)
+if current_session.metax == null then
+    print("Metax not loaded for this session. Use [jump] to load first.")
+    return 0
+end if
 metax = current_session.metax
 
 is_local = false
