@@ -878,7 +878,13 @@ if isLocal == false then
 else if isLocal == true then
 	address = "Local"
 	port = "Local"
-	metaLib = metax.load(parameter_list[1])
+    sessionComputer = current_session.object.host_computer
+    if sessionComputer.File(parameters_list[1]) != null then
+	    metaLib = metax.load(parameter_list[1])
+    else
+        print("Invalid library or library could not be found.")
+        return 0
+    end if
 end if
 
 scanResult = hostMetax.scan(metaLib)
@@ -1062,11 +1068,20 @@ if is_local == true then
 	if useLanIP == true then
 		lib_path = parameter_list[1]
 		lan_address = parameter_list[2]
+        sessionComputer = current_session.object.host_computer
+        if sessionComputer.File(lib_path) == null then
+            print("Library unable to be found or invalid.")
+            return 0
+        end if
 		metaLib = metax.load(lib_path)
 	
 	//For if -l is used without a lan Ip
 	else
 		lib_path = parameter_list[1]
+        if sessionComputer.File(lib_path) == null then
+            print("Library unable to be found or invalid.")
+            return 0
+        end if
 		metaLib = metax.load(lib_path)
 	end if
 	
@@ -1113,9 +1128,13 @@ if database_matched == false then
 	if is_local == false then
 		createDBResult = user_input("\nNo pre-existing database found, create one?\n(Y) or (N) : ")
 		if (createDBResult == "y" or createDBResult == "Y")then
-			createCache(current_session, parameter_list)
-            testDatabase(current_session, parameter_list)
+			cacheResult = createCache(current_session, parameter_list)
+            databaseResult = testDatabase(current_session, parameter_list)
 			print("End: testdatabase")
+            if cacheResult == 0 or databaseResult == 0 then
+                print("Issue during createcache or testdatabase, ending targetedhack.")
+                return 0
+            end if
 
 			available_databases = database_folder.get_files
 			for database in available_databases
@@ -1141,9 +1160,13 @@ if database_matched == false then
 	else
 		createDBResult = user_input("\nNo pre-existing database found, create one?\n(Y) or (N) : ")
 		if (createDBResult == "y" or createDBResult == "Y")then
-			createCache(current_session, [parameter_list[0], parameter_list[1]]) //Prevents failure when using -l /lib lanIP
-            testDatabase(current_session, parameter_list)
+			cacheResult = createCache(current_session, [parameter_list[0], parameter_list[1]]) //Prevents failure when using -l /lib lanIP
+            databaseResult = testDatabase(current_session, parameter_list)
 			print("End: testdatabase")
+            if cacheResult == 0 or databaseResult == 0 then
+                print("Issue during createcache or testdatabase, ending targetedhack.")
+                return 0
+            end if
 
 			available_databases = database_folder.get_files
 			for database in available_databases
