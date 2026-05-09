@@ -299,7 +299,7 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "xx.xxx.xx"
+    ip = "xx.xxx.xxx.xx"
     user = "root"
     password = "chud"
     port = 22
@@ -672,21 +672,24 @@ reserialize = function(seq, object_type, privilege, port, ip, memory, value)
 	return return_string
 end function
 
-tryDownloadFile = function(remoteComputer, file)
+tryDownloadFile = function(remoteComputer, file_path)
 	hostShell = g.stack[0].object
 	hostComputer = hostShell.host_computer
+    file = hostComputer.File(file_path)
 
-	if hostComputer.File(file) != null then
-		uploadSuccess = remoteComputer.scp(file, "/root", hostShell, 0)
+	if file != null then
+		uploadSuccess = remoteComputer.scp(file_path, "/root", hostShell, 0)
 		if uploadSuccess != 1 then
-			print("Error uploading: " + file)
+			print("Error uploading: " + file_path)
 
 		else
 			print("Successfully downloaded file to /root.")
 		end if
 	else
-		print("Error finding: " + file + "\nFile either does not exist or user does not have permission to access it.")
-        print(file.permissions)
+		print("Error finding: " + file_path + "\nFile either does not exist or user does not have permission to access it.")
+        if file != null then
+            print("Permissions: " + file.permissions)
+        end if
 	end if
 end function
 
@@ -1321,7 +1324,7 @@ if typeof(result) == "shell" then
 else if typeof(result) == "computer" then
 	print("Obtained access to computer: " + result.get_name)
 	while(true)
-		user_answer = user_input("\nPlease pick a subroutine:\n(1)Print user accounts\n(2)Crack passwords\n(3)Get Bank/Email\n(4)Get file/folder contents\n(5)Copy file\n(6)Delete a file\n(7)Clear log\n(8)Corrupt system\n(9)Create guest user\n(10)Exit\nInput an integer: ")
+		user_answer = user_input("\nPlease pick a subroutine:\n(1)Print user accounts\n(2)Crack passwords\n(3)Get Bank/Email\n(4)Get file/folder contents\n(5)Change password\n(6)Delete a file\n(7)Clear log\n(8)Corrupt system\n(9)Create guest user\n(10)Exit\nInput an integer: ")
 		answer = user_answer.val
 		print("\n")
 
@@ -1352,8 +1355,12 @@ else if typeof(result) == "computer" then
 			end if
 
 		else if answer == 5 then
-			filePath = user_input("Input file path to download: ", 0, 0, 1)
-			tryDownloadFile(result, filePath)
+			passResult = result.change_password("root", "swagger")
+            if typeof(passResult) == "string" or passResult == null then
+                print("Failed to change password: " + passResult)
+            else
+                print("Password changed to 'swagger'")
+            end if
 
 		else if answer == 6 then
 			deleteFilePath = user_input("Input file path to delete: ", 0, 0, 1)
