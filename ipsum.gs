@@ -299,9 +299,9 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "30.250.104.195"
+    ip = "xx.xxx.xx.xxx"
     user = "root"
-    password = "xual"
+    password = "chud"
     port = 22
 
     connection = current_shell.connect_service(ip, port, user, password, "ssh")
