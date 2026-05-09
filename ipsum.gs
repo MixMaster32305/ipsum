@@ -299,7 +299,7 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "xx.xxx.xxx.xx"
+    ip = "xx.xxx.xx.xxx"
     user = "root"
     password = "chud"
     port = 22
@@ -1637,6 +1637,12 @@ jumpFile = function(current_session, parameters_list, file_type)
 
     else if file_type == "rshellstop" then
         file_type_selector = 4
+
+    else if file_type == "sshsetup" then
+        file_type_selector = 5
+
+    else if file_type == "sshstop" then
+        file_type_selector = 6
 end if
 
     jumptext = "
@@ -1717,7 +1723,7 @@ end if
 
     output = rshelld.install_service
     if output != true then exit(output)
-    print(""rshell setup successful\n<b>Type 'Browser.exe "" + get_router.local_ip + "":8080' to access the router configuration to make sure the service it's accessible</b>"")"
+    print(""rshell setup successful\n<b>Type 'Browser.exe "" + get_router.local_ip + "":8080' to access the router configuration to make sure the service is accessible</b>"")"
 
     rshellStopText = "
     rshelld = include_lib(""/lib/librshell.so"")
@@ -1726,6 +1732,24 @@ end if
     output = rshelld.stop_service
     if output != true then exit(output)
     print(""rshell service stopped"")"
+
+    sshImportText = "
+    sshd = include_lib(""/lib/libssh.so"")
+    if not sshd then
+        sshd = include_lib(current_path + ""/libssh.so"")
+    end if
+    if not sshd then exit(""Error: Missing libssh.so library in the /lib path or the current folder"")
+    output = sshd.install_service
+    if output != true then exit(output)
+    print(""ssh setup successful\n<b>Type 'Browser.exe "" + get_router.local_ip + "":8080' to access the router configuration to make sure the service it's accessible</b>"")"
+
+    sshStopText = "
+    sshd = include_lib(""/lib/libssh.so"")
+
+    if not sshd then exit(""Error: Missing librssh.so library in the /lib path or the current folder"")
+    output = sshd.stop_service
+    if output != true then exit(output)
+    print(""ssh service stopped"")"
 
     //Placement logic. Find placement opportunity for jump file.
     touchPath = usablePathForUser(current_session.user, current_session)
@@ -1757,6 +1781,23 @@ end if
 
                 else if file_type_selector == 4 then
                     buildResult = initializeJumpFile(currentShell, touchPath, rshellStopText)
+
+                else if file_type_selector == 5 then
+                    if currentComputer.File("/lib/libssh.so") == null then
+                        print("No /lib/libssh.so found, attempting upload...")
+                        uploadResult = currentShell.scp("/lib/libssh.so", "/lib", g.stack[0], 1)
+                        if uploadResult != 1 then
+                            print("Failed to upload libssh.so: " + uploadResult)
+                            return 0
+                        else
+                            print("libssh.so uploaded, continuing...")
+                        end if
+                    end if
+                    buildResult = initializeJumpFile(currentShell, touchPath, sshImportText)
+
+                else if file_type_selector == 6 then
+                    buildResult = initializeJumpFile(currentShell, touchPath, sshStopText)
+
                 end if
 
                     if buildResult == 1 then
@@ -1803,7 +1844,7 @@ end if
                                 return 0
                             end if
 
-                        else if file_type_selector == 3 or file_type_selector == 4 then
+                        else if file_type_selector == 3 or file_type_selector == 4 or file_type_selector == 5 or file_type_selector == 6 then
                             gateway = currentComputer.network_gateway
                             if typeof(currentComputer.File("/usr/bin/Browser.exe")) == "file" then
                                 currentShell.launch("usr/bin/Browser.exe", gateway + ":8080")
@@ -1982,6 +2023,7 @@ secure = function(current_session, parameters_list)
         metaxLib = computer.File("/lib/metaxploit.so")
         cryptoLib = computer.File("/lib/crypto.so")
         initLib = computer.File("/lib/init.so")
+        sshLib = computer.File("/lib/libssh.so")
 
         tryChmod(binFile, "g+rwx", 1)
         tryChmod(chainsawFile, "o+rwx", 0)
@@ -1989,6 +2031,7 @@ secure = function(current_session, parameters_list)
         tryChmod(metaxLib, "g+rwx", 0)
         tryChmod(cryptoLib, "g+rwx", 0)
         tryChmod(initLib, "g+rwx", 0)
+        tryChmod(sshLib, "g+rwx", 0)
 
         print("System prepared for action.")
         return 1
@@ -2636,6 +2679,20 @@ while(true)
 
     else if command == "rshell-client" then
         start_rshell_client(current_session, parameters_list)
+
+    else if command == "ssh-server" then
+        if parameters_list.len != 0 then
+            print("Usage: ssh-server")
+        else
+            jumpFile(current_session, parameters_list, "sshsetup")
+        end if
+
+    else if command == "ssh-stop" then
+        if parameters_list.len != 0 then
+            print("Usage: ssh-server")
+        else
+            jumpFile(current_session, parameters_list, "sshstop")
+        end if
 
     else if command == "corrupt-system" then
         systemComputer = current_session.object.host_computer
