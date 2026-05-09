@@ -299,7 +299,7 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "xx.xxx.xx.xxx"
+    ip = "xx.xxx.xx"
     user = "root"
     password = "chud"
     port = 22
@@ -2317,7 +2317,6 @@ selectSSHTrackingOptions = function()
     new_index = 0
     for line in sshLinesList
         if new_index == user_selection then
-            print(line.split(","))
             return line.split(",")
         else
             new_index = new_index + 1
