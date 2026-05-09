@@ -5,7 +5,7 @@ g = get_custom_object
 
 if not g.hasIndex("stack") then g.stack = {}
 
-//Object is only shells for now. Computers and files handled by targetedhack switch statement.
+//Object is only shells for now. Computers and files handled by hack switch statement.
 Session = { "metax": null,
             "router":null,
             "computerName":null,
@@ -20,7 +20,7 @@ printHelpInfo = function()
 <color=#F2AFFF>swap</color> : Usage-- <color=#FFFFFF>swap or swap[integer]</color> --: <color=#3DF19D>Lets you change between different obtained sessions (shells).</color>\n
 <color=#F2AFFF>createcache</color> : Usage-- <color=#FFFFFF>createcache [public ip] [port] or -l [local library, etc /lib/init.so] or -l [local library] [lan ip for bounce exploit]</color> --: <color=#3DF19D>Scans a service version or library and records the found exploit values in a cache file in /Databases on the host computer.</color>\n
 <color=#F2AFFF>testdatbase</color> : Usage-- <color=#FFFFFF>testdatabase [public ip] [port] or -l [local library, etc /lib/init.so] or -l [local library] [lan ip for bounce exploit]</color> --: <color=#3DF19D>Tests the exploits found for a service version or lib from the createcache file and records what each does along with privileges.</color>\n
-<color=#F2AFFF>targetedhack</color> : Usage-- <color=#FFFFFF>targetedhack [public ip] [port] or -l [local library, etc /lib/init.so] or -l [local library] [lan ip for bounce exploit]</color> --: <color=#3DF19D>Executes a chosen exploit against a service version/lib from the cache file and gives additional sub options depending on the returned type. Can call createcache and testdatabase automatically. Note: Privilege escalation requires a copy of chainsaw in /bin with g+rwx and o+x privileges.</color>\n
+<color=#F2AFFF>hack</color> : Usage-- <color=#FFFFFF>hack [public ip] [port] or -l [local library, etc /lib/init.so] or -l [local library] [lan ip for bounce exploit]</color> --: <color=#3DF19D>Executes a chosen exploit against a service version/lib from the cache file and gives additional sub options depending on the returned type. Can call createcache and testdatabase automatically. Note: Privilege escalation requires a copy of chainsaw in /bin with g+rwx and o+x privileges.</color>\n
 <color=#F2AFFF>connect</color> : Usage-- <color=#FFFFFF>connect</color> --: <color=#3DF19D>Automatically connects to your server and uses [jump] to load its metax. Note: you will have to hard code your server before building ipsum, look for the connect function and change the ip & password.</color>\n
 <color=#F2AFFF>take</color> : Usage-- <color=#FFFFFF>take [filepath to download from current session pc] [filepath to download to on host pc]</color> --: <color=#3DF19D>An scp -d equivalent that downloads a desired file from the remote session to a filepath on your host pc.</color>\n
 <color=#F2AFFF>pull</color> : Usage-- <color=#FFFFFF>pull [filepath to upload from host pc] [filepath to upload file to on current session pc]</color> --: <color=#3DF19D>An scp -u equivalent that uploads a desired file from your host pc to a filepath on the remote PC.</color>\n
@@ -44,12 +44,15 @@ printHelpInfo = function()
 <color=#F2AFFF>corrupt-system</color> : Usage-- <color=#FFFFFF>corrupt-system</color> --: <color=#3DF19D>Corrupts the pc of the current session, needs root access to execute successfully. Will not let you corrupt the host PC.</color>\n
 <color=#F2AFFF>jump</color> : Usage-- <color=#FFFFFF>jump</color> --: <color=#3DF19D>Builds a jump file on the current session that will load metaxploit.so and a router into the session for use (otherwise cannot use metaxploit-dependent commands). Deletes file after running.</color>\n
 <color=#F2AFFF>sudo</color> : Usage-- <color=#FFFFFF>sudo [user] [password]</color> --: <color=#3DF19D>Lets you login to a different user and updates the given session. Uses a jump file to get the new shell.</color>\n
-<color=#F2AFFF>ssh</color> : Usage-- <color=#FFFFFF>ssh user@password [public ip]</color> --: <color=#3DF19D>Lets you obtain a session through ssh connection.\n
+<color=#F2AFFF>ssh</color> : Usage-- <color=#FFFFFF>ssh user@password [public ip] or ssh [list]</color> --: <color=#3DF19D>Lets you obtain a session through ssh connection, or list tracked ssh sessions from tracking.dat to choose from.\n
 <color=#F2AFFF>clearsessions</color> : Usage-- <color=#FFFFFF>clearsessions</color> --: <color=#3DF19D>Clears all sessions except host and clears logs from the sessions before deletion.</color>\n
 <color=#F2AFFF>delsession</color> : Usage-- <color=#FFFFFF>delsession</color> --: <color=#3DF19D>Lets you select a session to delete.</color>\n
 <color=#F2AFFF>clear</color> : Usage -- <color=#FFFFFF>clear</color> --: <color=#3DF19D>Clears text from the terminal.</color>\n
 <color=#F2AFFF>clearlog</color> : Usage-- <color=#FFFFFF>clearlog</color> --: <color=#3DF19D>Clears the log of the current session. Requires root access.</color>\n
 <color=#F2AFFF>clearall</color> : Usage-- <color=#FFFFFF>clearall</color> --: <color=#3DF19D>Clears the logs of every obtained session in the stack.</color>\n
+<color=#F2AFFF>remind</color> : Usage-- <color=#FFFFFF>txt</color> --: <color=#3DF19D>Searches through tracking.dat for the current session's public IP, reports its password.</color>\n
+<color=#F2AFFF>txt</color> : Usage-- <color=#FFFFFF>txt</color> --: <color=#3DF19D>Creates or opens a mission.txt file in /root.</color>\n
+<color=#F2AFFF>track</color> : Usage-- <color=#FFFFFF>track [password] [ssh available true or false] or [list]</color> --: <color=#3DF19D>Tracks a session in /Databases/tracking.dat and can allow ssh [list] to reconnect later. Use 'true' if the session has an ssh port, else use false.</color>\n
 <color=#F2AFFF>terminal</color> : Usage-- <color=#FFFFFF>terminal</color> --: <color=#3DF19D>Switches to a native bash terminal on the session shell.</color>\n
 <color=#F2AFFF>help</color> : Usage-- <color=#FFFFFF>help</color> --: <color=#3DF19D>Prints information for all available commands.</color>\n
 <color=#F2AFFF>exit</color> : Usage-- <color=#FFFFFF>exit</color> --: <color=#3DF19D>Closes ipsum and clears all logs and sessions before closure (equivalent to calling clearall and clearsessions).</color>\n
@@ -296,9 +299,9 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "xx.xxx.xx.xxx"
+    ip = "30.250.104.195"
     user = "root"
-    password = "chud"
+    password = "xual"
     port = 22
 
     connection = current_shell.connect_service(ip, port, user, password, "ssh")
@@ -322,9 +325,51 @@ internalSSH = function(parameters_list, current_session)
     
     else
         credentials = parameters_list[0].split("@")
+        if credentials.len != 2 then
+            print("Invalid username@password given")
+            return 0
+        end if
         user = credentials[0]
         password = credentials[1]
         ipAddress = parameters_list[1]
+        port = 22
+
+        if typeof(port) != "number" then 
+            print("Invalid port: " + port)
+            return 0
+        end if
+
+            print("Connecting...")
+
+            shell = current_session.object.connect_service(ipAddress, port, user, password, "ssh")
+            if typeof(shell) == "string" then 
+                print(shell)
+                return 0
+            end if
+
+            if shell then 
+                sshSession = createSession(shell, user)
+                addSession(sshSession)
+                addToTracking(sshSession, password, "true")
+                print("connection successful")
+                return 1
+
+            else 
+                print("connection failed")
+                return 0
+            end if
+    end if
+end function
+
+trackingSSH = function(trackingInfo, current_session)
+if trackingInfo.len != 4 then
+        print("Required parameters: [list]")
+        return 0
+    
+    else
+        user = "root"
+        password = trackingInfo[2]
+        ipAddress = trackingInfo[1]
         port = 22
 
         if typeof(port) != "number" then 
@@ -351,6 +396,27 @@ internalSSH = function(parameters_list, current_session)
                 return 0
             end if
     end if
+end function
+
+remind = function(current_session)
+    unpackedTracking = unpackTracking()
+    sessionIP = current_session.publicAddress
+
+    for line in unpackedTracking
+        lineEntries = line.split(",")
+        lineIP = lineEntries[1]
+        linePassword = lineEntries[2]
+
+        if sessionIP == lineIP then
+            print(linePassword)
+            return 1
+
+        else
+            continue
+        end if
+    end for
+    print("IP not found in tracking.dat")
+    return 0
 end function
 
 clearLog = function(current_session)
@@ -1039,7 +1105,7 @@ end function
 
 targetedHack = function(current_session, parameter_list)
 if parameter_list.len > 3 or parameter_list.len < 2 or parameter_list[0] == "-h" or parameter_list[0] == "--help" then 
-    print("<b>Usage: targetedhack" + "[ip_address] [port] or [-l] [local lib path] or [-l] [local lib path] [lan ip]</b>")
+    print("<b>Usage: hack" + "[ip_address] [port] or [-l] [local lib path] or [-l] [local lib path] [lan ip]</b>")
     return 0
 end if
 
@@ -1134,7 +1200,7 @@ if database_matched == false then
             databaseResult = testDatabase(current_session, parameter_list)
 			print("End: testdatabase")
             if cacheResult == 0 or databaseResult == 0 then
-                print("Issue during createcache or testdatabase, ending targetedhack.")
+                print("Issue during createcache or testdatabase, ending hack.")
                 return 0
             end if
 
@@ -1148,7 +1214,7 @@ if database_matched == false then
 			end for
 
             if database_matched == false then
-                print("targetedhack failed to find a usable database. Canceling...")
+                print("hack failed to find a usable database. Canceling...")
                 return 0
             end if
 
@@ -1166,7 +1232,7 @@ if database_matched == false then
             databaseResult = testDatabase(current_session, parameter_list)
 			print("End: testdatabase")
             if cacheResult == 0 or databaseResult == 0 then
-                print("Issue during createcache or testdatabase, ending targetedhack.")
+                print("Issue during createcache or testdatabase, ending hack.")
                 return 0
             end if
 
@@ -1180,7 +1246,7 @@ if database_matched == false then
 			end for
 
             if database_matched == false then
-                print("targetedhack failed to find a usable database. Canceling...")
+                print("hack failed to find a usable database. Canceling...")
                 return 0
             end if
 
@@ -2098,6 +2164,192 @@ start_sniffer = function(current_session)
     return 1
 end function
 
+openTxt = function()
+    hostShell = g.stack[0].object
+    hostComputer = hostShell.host_computer
+    file = hostComputer.File("/root/mission.txt")
+
+    if  file == null then
+        hostComputer.touch("/root", "mission.txt")
+        hostShell.launch("/usr/bin/Notepad.exe", "/root/mission.txt")
+
+    else
+        hostShell.launch("/usr/bin/Notepad.exe", "/root/mission.txt")
+    end if
+end function
+
+//Adds computer name, public IP, and password to a tracking file in csv format, ended by a newline character.
+//sshConnected is a bool, true or false. Using [track] will let you choose false or true, using [ssh] sets it to true.
+addToTracking = function(session, password, sshConnected)
+    hostShell = g.stack[0].object
+    hostComputer = hostShell.host_computer
+    databasesPresent = hostComputer.File("/Databases")
+    trackingPresent = hostComputer.File("/Databases/tracking.dat")
+    currentIP = session.publicAddress
+    currentName = session.computerName
+    writeString = ""
+
+    if databasesPresent == null then
+        hostComputer.create_folder("/", "Databases")
+        print("Created /Databases")
+    end if
+
+    if trackingPresent == null then
+        hostComputer.touch("/Databases", "tracking.dat")
+        print("Created /Databases/tracking.dat")
+        trackingPresent = hostComputer.File("/Databases/tracking.dat")
+    end if
+    
+    if trackingPresent == null then
+        print("Error: tracking.dat not found: " + trackingPresent)
+        return 0
+    end if
+
+    if sshConnected != "true" then
+        sshConnected = "false"
+    end if
+
+    presentInTracking = checkForTrackingEntry(currentName, currentIP, password, sshConnected)
+    if presentInTracking == 1 then
+        print("Session already tracked.")
+        return 0
+    end if
+
+    writeString = currentName + "," + currentIP + "," + password + "," + sshConnected + "\n"
+    currentContents = trackingPresent.get_content
+    appendedContents = currentContents + writeString
+    writeResult = trackingPresent.set_content(appendedContents)
+
+    if writeResult == null or typeof(writeResult) == "string" then
+        print("Error while writing to /Databases/tracking.dat " + writeResult)
+        return 0
+    end if
+    print("Added " + currentName + " to tracking database.")
+    return 1
+end function
+
+//1 for if duplicate, 0 if not. Will allow for a new entry if the old one wasn't ssh connected.
+checkForTrackingEntry = function(computerName, publicIP, password, sshConnection)
+    unpackedLines = unpackTracking()
+    for line in unpackedLines
+        lineEntries = line.split(",")
+        currentName = lineEntries[0]
+        currentIP = lineEntries[1]
+        currentPassword = lineEntries[2]
+        currentSSH = lineEntries[3]
+
+        if currentName == computerName and publicIP == currentIP and currentPassword == password then
+            if currentSSH == "false" and sshConnection == "true" then
+                return 0
+            else
+                return 1
+            end if
+        end if
+    end for
+    return 0
+end function
+
+unpackTracking = function()
+    hostComputer = g.stack[0].object.host_computer
+
+    tracking = hostComputer.File("/Databases/tracking.dat")
+    trackingLines = tracking.get_content.split("\\n")
+    return trackingLines[:-1]
+end function
+
+showTrackingOptions = function()
+    unpackedLines = unpackTracking()
+
+    index = 0
+    for line in unpackedLines
+        lineEntries = line.split(",")
+        currentName = lineEntries[0]
+        currentIP = lineEntries[1]
+        currentPassword = lineEntries[2]
+        currentSSH = lineEntries[3]
+
+        printString = index + ": <color=#F79B11>" + currentName + "</color> <color=#E66AFF>" + currentIP + "</color> " + currentPassword + " " + currentSSH
+
+        print(printString)
+        index = index + 1
+    end for
+end function
+
+selectSSHTrackingOptions = function()
+    sshLinesList = []
+    unpackedTracking = unpackTracking()
+    if unpackedTracking.len == 0 then
+        print("No connections currently being tracked.")
+        return 0
+    end if
+
+    index = 0
+    for line in unpackedTracking
+        lineEntries = line.split(",")
+        currentName = lineEntries[0]
+        currentIP = lineEntries[1]
+        currentPassword = lineEntries[2]
+        currentSSH = lineEntries[3]
+
+        if currentSSH == "true" then
+            sshLinesList.push(line)
+            printString = index + ": <color=#F79B11>" + currentName + "</color> <color=#E66AFF>" + currentIP + "</color> " + currentPassword
+            print(printString)
+            index = index + 1
+
+        else
+            continue
+        end if
+    end for
+
+    if sshLinesList.len == 0 then
+        print("No ssh available connections tracked.")
+        return 0
+    end if
+
+    //selection mechanism
+    user_selection = user_input("Select an index: ").to_int
+    if typeof(user_selection) != "number" then
+        print("Invalid selection: index must be a number.")
+        return 0
+    end if
+
+    new_index = 0
+    for line in sshLinesList
+        if new_index == user_selection then
+            print(line.split(","))
+            return line.split(",")
+        else
+            new_index = new_index + 1
+        end if
+    end for
+    print("Index not found")
+    return 0
+end function
+
+//Returns the delimited line as a list. index 0 is name, 1 is ip, 2 is password, 3 is ssh status.
+//Or returns 0 is failed.
+selectTrackingOption = function()
+    showTrackingOptions()
+    user_selection = user_input("Select an index: ").to_int
+    if typeof(user_selection) != "number" then
+        print("Invalid selection: index must be a number.")
+        return 0
+    end if
+
+    index = 0
+    for line in unpackTracking()
+        if index == user_selection then
+            return line.split(",")
+        else
+            index = index + 1
+
+        end if
+    end for
+    print("Index not found")
+    return 0
+end function
+
 getUsersNet = function(comp)
     homeFile = comp.File("/home")
     result = homeFile.get_folders
@@ -2268,7 +2520,7 @@ while(true)
     else if command == "testdatabase" then
         testDatabase(current_session, parameters_list)
    
-    else if command == "targetedhack" then
+    else if command == "hack" then
         result = targetedHack(current_session, parameters_list)
         if typeof(result) == "map" then
             session_index = getSessionIndex(result)
@@ -2339,6 +2591,9 @@ while(true)
 
     else if command == "crack" then
         crack(parameters_list)
+
+    else if command == "txt" then
+        openTxt()
 
     else if command == "secure" then
         secure(current_session, parameters_list)
@@ -2416,8 +2671,39 @@ while(true)
         end if
 
     else if command == "ssh" then
-        sshResult = internalSSH(parameters_list, current_session)
-        
+        if parameters_list.len != 1 and parameters_list.len != 2 then
+            print("Usage: ssh [user@password] [public ip] or ssh list")
+        else
+            if parameters_list[0].lower == "list" and parameters_list.len == 1 then
+                trackingInfoList = selectSSHTrackingOptions()
+                if trackingInfoList == 0 then
+                    print("Unable to connect.")
+                else
+                    trackingSSH(trackingInfoList, current_session)
+                end if
+
+
+            else
+                sshResult = internalSSH(parameters_list, current_session)
+            end if
+        end if 
+
+    else if command == "track" then
+        if parameters_list.len != 2 and parameters_list.len != 1 then
+            print("Usage: [list] or [password] [ssh connection available true or false]")
+
+        else if parameters_list[0].lower == "list" then
+            showTrackingOptions()
+
+        else
+            password = parameters_list[0]
+            sshConnected = parameters_list[1]
+            addToTracking(current_session, password, sshConnected)
+        end if
+
+    else if command == "remind" then
+        remind(current_session)
+
     else if command == "clearsessions" then
         clearAllSessionLogs()
         clearStack()
