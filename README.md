@@ -19,7 +19,7 @@ Step 4. ctrl + v to paste into the game's CodeEditor and make a build. No third-
 
 Optional dependency:
 There's a single optional dependency and that's chainsaw by NitroCynic which you can find here: https://github.com/jwfraustro/chainsaw
-chainsaw is only necessary to use the privilege escalation component of targetedhack, otherwise you can just choose not to use it. To use, it must be named "chainsaw" and located in /bin with g+rwx and o+x permissions (secure prepare can set these automatically for you)
+chainsaw is only necessary to use the privilege escalation component of hack, otherwise you can just choose not to use it. To use, it must be named "chainsaw" and located in /bin with g+rwx and o+x permissions (secure prepare can set these automatically for you)
 
 ---
 
@@ -27,7 +27,7 @@ chainsaw is only necessary to use the privilege escalation component of targeted
 These commands use hard-coded values, so to use them you first need to go into the code and find the nethack function or the connect function respectively.
 
 ### Nethack
-Nethack uses a hardcoded value from your init.so library that it'll transfer to a router for exploitation. First, run targetedhack -l /lib/init.so on your local PC to find a computer bounce exploit, then go to the nethack function in ipsum's code and find the following variables: **libVersion**, **mem_value**, **vuln_value** (ctrl + f and search for "nethack =")and edit these with the memory region/vuln value of one of the found bounce exploits, and change libVersion to that of your init.so library (can check using checklibs command)
+Nethack uses a hardcoded value from your init.so library that it'll transfer to a router for exploitation. First, run hack -l /lib/init.so on your local PC to find a computer bounce exploit, then go to the nethack function in ipsum's code and find the following variables: **libVersion**, **mem_value**, **vuln_value** (ctrl + f and search for "nethack =")and edit these with the memory region/vuln value of one of the found bounce exploits, and change libVersion to that of your init.so library (can check using checklibs command)
 
 ### Connect
 Connect automatically connects you to your remote server and loads its metax. Find the variables **ip** and **password** in ipsum's connect function (ctrl + f and search for "connect =") and change them to those of your remote server.
@@ -39,7 +39,7 @@ Connect automatically connects you to your remote server and loads its metax. Fi
 1. Run [ipsum] on a root terminal (use sudo -s and login before launching).
 2. Run [connect] to get a session for your remote server.
 3. Use nmap [ip] to scout your target.
-4. Use targetedhack [ip] [port] to launch an attack on that target and get a shell then privilege escalate and login to root using sudo [user] [password]
+4. Use hack [ip] [port] to launch an attack on that target and get a shell then privilege escalate and login to root using sudo [user] [password]
 5. On the new session, use [jump] to load metax then pivot to lan connections to dig in deeper.
 6. Once finished, use [swap] to transition back to your host or server session, then use [clearsessions] to clear logs on all sessions and close everything but the host session.
 ```
@@ -63,9 +63,9 @@ To setup a build of chainsaw:
    respective files into the respective source files and save each one separately.
 
 4. With the source files populated, open chainsaw.src and make a build of it, store it in
-   /bin and name it "chainsaw" so targetedhack can recognize it.
+   /bin and name it "chainsaw" so hack can recognize it.
 ```
-To run chainsaw manually, just upload and use "chainsaw run". Otherwise, targetedhack will do this automatically during privilege escalation.
+To run chainsaw manually, just upload and use "chainsaw run". Otherwise, hack will do this automatically during privilege escalation.
 
 **A big thank you to NitroCynic/jwfraustro for making and sharing chainsaw, it's a great tool. Use the link above to give a star to his project or report bugs if you'd like.**
 
@@ -84,23 +84,23 @@ nmap 42.32.76.140
 ```
 ---
 
-### `targetedhack`
+### `hack`
 Begins an attack on a specific port of a target ip address and will present exploit options to choose from after (a computer exploit will open a computer-interaction submenu, file exploits will read the contents of all gained files). Also allows for exploiting local lib vulnerabilities and bounce exploits. Can call createcache and testdatabase automatically if a database cache file for the targeted service version or library is not found. Can also use "exit" during exploit selection to back out without launching an attack.
 ```
-targetedhack [ip address] [port]
-targetedhack -l [lib path]
-targetedhack -l [lib path] [connected lan ip]
+hack [ip address] [port]
+hack -l [lib path]
+hack -l [lib path] [connected lan ip]
 ```
 **Examples:**
 ```
-targetedhack 42.32.76.140 22
-targetedhack -l /lib/init.so
-targetedhack -l /lib/init.so 42.32.76.140
+hack 42.32.76.140 22
+hack -l /lib/init.so
+hack -l /lib/init.so 42.32.76.140
 ```
 ---
 
 ### `createcache`
-Scans a service version or library for their vulnerabilities and stores them in a uniquely named database folder in /Databases (will also make /Databases if it isn't already present). Can use manually to recreate a cache file, or during troubleshooting. Otherwise, let targetedhack do it for you.
+Scans a service version or library for their vulnerabilities and stores them in a uniquely named database folder in /Databases (will also make /Databases if it isn't already present). Can use manually to recreate a cache file, or during troubleshooting. Otherwise, let hack do it for you.
 ```
 createcache [ip address] [port]
 createcache -l [lib path]
@@ -113,7 +113,7 @@ createcache -l /lib/init.so
 ---
 
 ### `testdatabase`
-Tests the exploits found during createcache and finds their returned object types and user privileges, then updates the cache file with them. Can call manually to retest a cache file against a new target, otherwise let targetedhack do it.
+Tests the exploits found during createcache and finds their returned object types and user privileges, then updates the cache file with them. Can call manually to retest a cache file against a new target, otherwise let hack do it.
 ```
 testdatabase [ip address] [port]
 testdatabase -l [lib path]
@@ -148,13 +148,15 @@ sudo root Ehackitt
 ---
 
 ### `ssh`
-Allows you to connect to an ssh shell and add it as a session.
+Allows you to connect to an ssh shell and add it as a session. ssh list displays tracked connections from /Databases/tracking.dat that have ssh available and allows you to choose one to create a new session with.
 ```
 ssh [username@password] [ip]
+ssh [list]
 ```
 **Example:**
 ```
 ssh root@Ehackitt 42.32.76.140
+ssh list
 ```
 ---
 
@@ -307,7 +309,7 @@ checklibs -l /root/SafeLibs/init.so
 ---
 
 ### `readdatabase`
-Gives you the option to read any of the databases in the /Databases folder with targetedhack's usual formatting.
+Gives you the option to read any of the databases in the /Databases folder with hack's usual formatting.
 
 **Example:**
 ```
@@ -381,6 +383,31 @@ corrupt-system
 Clears the text from the terminal.
 ```
 clear
+```
+---
+
+### `track`
+Tracks the current session's IP and password in /Databases/tracking.dat along with the ssh connection availability bool. If ssh connection available is true, then it will appear during ssh list.
+```
+track [password] [ssh connection available, true or false]
+```
+**Example:**
+```
+track axlo true
+```
+---
+
+### `remind`
+Searches /Datbases/tracking.dat for the current public IP and prints its tracked password.
+```
+remind
+```
+---
+
+### `txt`
+Creates and or opens /root/mission.txt for keeping notes.
+```
+txt
 ```
 ---
 
