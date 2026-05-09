@@ -160,6 +160,24 @@ ssh list
 ```
 ---
 
+### `ssh-server`
+Setups an ssh service on the current session. Requires libssh.so on your host machine and utilizes a jump file which is then deleted.
+
+**Example:**
+```
+ssh-server
+```
+---
+
+### `ssh-stop`
+Stops the ssh service running on the current session.
+
+**Example:**
+```
+ssh-stop
+```
+---
+
 ### `connect`
 Connects you to your hard-coded server and performs [jump] on it to load metax.
 
