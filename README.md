@@ -7,7 +7,7 @@
 ## Summary
 **ipsum** is an easy to use and easy to install hacking tool for the game Grey Hack that automates away tedious management tasks to leave a smooth and rapid workflow. No more dragging around scripts from PC to PC and enduring manual executions, let ipsum do the work for you.
 
-Supports automated exploit scanning, testing, caching, and execution that utilizes the speed of the host PC's CPU, a mobile nmap, session manager, system securing commands, rshell deployment/management, jump files, and more!
+Supports automated exploit scanning, testing, caching, and execution that utilizes the speed of the host PC's CPU, a mobile nmap, session manager, system securing commands, rshell deployment/management, jump files, connection tracking, and more!
 
 ---
 
