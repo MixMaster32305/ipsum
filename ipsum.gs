@@ -41,6 +41,8 @@ printHelpInfo = function()
 <color=#F2AFFF>rshell-interface</color> : Usage-- <color=#FFFFFF>rshell-interface</color> --: <color=#3DF19D>Lets you select a connected rshell-client shell to add as a session. Can type 'exit' to leave without picking an option.</color>\n
 <color=#F2AFFF>rshell-stop</color> : Usage-- <color=#FFFFFF>rshell-stop</color> --: <color=#3DF19D>Stops a currently running rshell service and opens the browser so you can unforward port 1222.</color>\n
 <color=#F2AFFF>rshell-client</color> : Usage-- <color=#FFFFFF>rshell-client [public ip to rshell server]</color> --: <color=#3DF19D>Starts an rshell client daemon on the current session's pc pointed towards the given public IP.</color>\n
+<color=#F2AFFF>ssh-server</color> : Usage-- <color=#FFFFFF>ssh-server</color> --: <color=#3DF19D>Starts an ssh service on the current session, requires /lib/libssh.so on the host PC.</color>\n
+<color=#F2AFFF>ssh-stop</color> : Usage-- <color=#FFFFFF>ssh-stop</color> --: <color=#3DF19D>Stops the ssh service on the current session.</color>\n
 <color=#F2AFFF>corrupt-system</color> : Usage-- <color=#FFFFFF>corrupt-system</color> --: <color=#3DF19D>Corrupts the pc of the current session, needs root access to execute successfully. Will not let you corrupt the host PC.</color>\n
 <color=#F2AFFF>jump</color> : Usage-- <color=#FFFFFF>jump</color> --: <color=#3DF19D>Builds a jump file on the current session that will load metaxploit.so and a router into the session for use (otherwise cannot use metaxploit-dependent commands). Deletes file after running.</color>\n
 <color=#F2AFFF>sudo</color> : Usage-- <color=#FFFFFF>sudo [user] [password]</color> --: <color=#3DF19D>Lets you login to a different user and updates the given session. Uses a jump file to get the new shell.</color>\n
@@ -299,7 +301,7 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "xx.xxx.xx.xxx"
+    ip = "xx.xxx.xx"
     user = "root"
     password = "chud"
     port = 22
@@ -785,7 +787,6 @@ else
 	end if
 end if
 end function
-
 
 //Checks /home folder for users, prints out names.
 printUsers = function(remoteComputer)
