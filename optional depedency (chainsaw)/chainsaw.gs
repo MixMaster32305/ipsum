@@ -382,7 +382,7 @@ ChainSaw.crack = function(show_logo = true) // Determine an unknown password usi
 		return result
 	end if
 
-	ChainSaw.Log("INFO", "No pregenerated passwords found.")
+	ChainSaw.Log("INFO", "No pregenerated passwords succeeded.")
 	ChainSaw.Log("INFO", "Attacking with markov chains...")
 	for i in range(0, len(ChainSaw.chains.indexes) - 1)
 		token = ChainSaw.chains.indexes[i]
