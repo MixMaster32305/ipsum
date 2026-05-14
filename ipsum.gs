@@ -323,13 +323,13 @@ end function
 internalSSH = function(parameters_list, current_session)
     if parameters_list.len != 2 then
         print("Required parameters: [username@password] [IP address]")
-        return 0
+        return current_session
     
     else
         credentials = parameters_list[0].split("@")
         if credentials.len != 2 then
             print("Invalid username@password given")
-            return 0
+            return current_session
         end if
         user = credentials[0]
         password = credentials[1]
@@ -338,7 +338,7 @@ internalSSH = function(parameters_list, current_session)
 
         if typeof(port) != "number" then 
             print("Invalid port: " + port)
-            return 0
+            return current_session
         end if
 
             print("Connecting...")
@@ -346,7 +346,7 @@ internalSSH = function(parameters_list, current_session)
             shell = current_session.object.connect_service(ipAddress, port, user, password, "ssh")
             if typeof(shell) == "string" then 
                 print(shell)
-                return 0
+                return current_session
             end if
 
             if shell then 
@@ -354,11 +354,11 @@ internalSSH = function(parameters_list, current_session)
                 addSession(sshSession)
                 addToTracking(sshSession, password, "true")
                 print("connection successful")
-                return 1
+                return sshSession
 
             else 
                 print("connection failed")
-                return 0
+                return current_session
             end if
     end if
 end function
@@ -366,7 +366,7 @@ end function
 trackingSSH = function(trackingInfo, current_session)
 if trackingInfo.len != 4 then
         print("Required parameters: [list]")
-        return 0
+        return current_session
     
     else
         user = "root"
@@ -376,7 +376,7 @@ if trackingInfo.len != 4 then
 
         if typeof(port) != "number" then 
             print("Invalid port: " + port)
-            return 0
+            return current_session
         end if
 
             print("Connecting...")
@@ -384,18 +384,18 @@ if trackingInfo.len != 4 then
             shell = current_session.object.connect_service(ipAddress, port, user, password, "ssh")
             if typeof(shell) == "string" then 
                 print(shell)
-                return 0
+                return current_session
             end if
 
             if shell then 
                 sshSession = createSession(shell, user)
                 addSession(sshSession)
                 print("connection successful")
-                return 1
+                return sshSession
 
             else 
                 print("connection failed")
-                return 0
+                return current_session
             end if
     end if
 end function
@@ -583,8 +583,8 @@ loadMetax = function(current_session)
     return 1
 end function
 
-info_to_record = function(seq_number, port, ip_address, memory_address, value)
-    return_string = str(seq_number) + "|||" + port + "|" + ip_address + "|" + memory_address + "|" + value
+info_to_record = function(seq_number, port, ip_address, memory_address, value, reqs)
+    return_string = str(seq_number) + "|||" + port + "|" + ip_address + "|" + memory_address + "|" + value + "|" + reqs
     return return_string
 end function
 
@@ -669,8 +669,8 @@ getUserFromHandler = function (handler)
 
 end function
 
-reserialize = function(seq, object_type, privilege, port, ip, memory, value)
-	return_string = seq + "|" + object_type + "|" + privilege + "|" + port + "|" + ip + "|" + memory + "|" + value +"\n"
+reserialize = function(seq, object_type, privilege, port, ip, memory, value, requirements)
+	return_string = seq + "|" + object_type + "|" + privilege + "|" + port + "|" + ip + "|" + memory + "|" + value + "|" + requirements + "\n"
 	return return_string
 end function
 
@@ -901,6 +901,45 @@ else
 end if
 end function
 
+classifyRequirements = function(segment)
+	req_symbols = ""
+	if segment.indexOf("*") != null then
+		reqs = segment.split("\*")[1:]
+
+		for req_untrimmed in reqs
+			req = req_untrimmed.trim
+			classifier = req.split(" ")[1]
+
+			if classifier == "root" then
+				req_symbols = req_symbols + "r,"
+
+			else if classifier == "guest" then
+				req_symbols = req_symbols + "g,"
+
+			else if classifier == "an" then //active user
+				req_symbols = req_symbols + "u,"
+
+			else if classifier == "registered" then
+				req_symbols = req_symbols + "n,"
+
+			else if classifier == "path" then
+				req_symbols = req_symbols + "p,"
+
+			else if classifier == "namespace" then
+				req_symbols = req_symbols + "l,"
+
+			else
+				print("Unrecognized requirement found in: " + segment)
+			end if
+		end for
+
+		return req_symbols[:-1]
+
+	else
+		return ""
+	end if
+end function
+
 //CreateCache
 createCache = function(current_session, parameter_list)
 if parameter_list.len != 2 or parameter_list[0] == "-h" or parameter_list[0] == "--help" then
@@ -922,6 +961,7 @@ metax = current_session.metax
 hostComputer = g.stack[0].object.host_computer
 hostMetax = g.stack[0].metax
 exploits = {}
+requirement_list= []
 
 if hostComputer.File("/Databases") == null then
 	folder_created = hostComputer.create_folder("/", "Databases")
@@ -960,13 +1000,15 @@ scanResult = hostMetax.scan(metaLib)
 
 loop_counter = 0
 for area in scanResult
-	scanAddress = metax.scan_address(metaLib, scanResult[loop_counter])
+	scanAddress = hostMetax.scan_address(metaLib, scanResult[loop_counter])
 	segments = scanAddress.split("Unsafe check: ")[1:]
 	overflowvalues = []
 	
+    //Requirements check put here
 	for segment in segments
    		labelStart = segment.indexOf("<b>")
    		labelEnd = segment.indexOf("</b>")
+        requirement_list.push(classifyRequirements(segment))
    		overflowvalues.push(segment[labelStart + 3: labelEnd])
 	end for
 
@@ -988,7 +1030,8 @@ writecounter = 1
 content = ""
 for keyvalue in exploits
 	for value in keyvalue.value
-		content = content + info_to_record(writecounter, port, address, keyvalue.key, value) + "\n"
+        requirements = requirement_list[writecounter - 1]
+		content = content + info_to_record(writecounter, port, address, keyvalue.key, value, requirements) + "\n"
 		writecounter = writecounter + 1
 	end for
 end for
@@ -1098,7 +1141,7 @@ for entry in file_contents
 
 	end if
 	print(returned_type)
-	reserialized_content = reserialized_content + reserialize(entry[0], returned_type, returned_privilege, entry[3], entry[4], entry[5], entry[6])
+	reserialized_content = reserialized_content + reserialize(entry[0], returned_type, returned_privilege, entry[3], entry[4], entry[5], entry[6], entry[7])
 	loop_counter = loop_counter + 1
 end for
 
@@ -2130,7 +2173,7 @@ rshellInterface = function(current_session)
 	metaxploit = current_session.metax
 	if metaxploit == null then
 		print("No metaxploit is loaded for current session, please use [jump]")
-		return 0
+		return current_session
 	end if
 
 	shells = []
@@ -2541,7 +2584,7 @@ while(true)
     sessionComputer = current_session.object.host_computer
     realUser = getUserFromHandler(sessionComputer)
     if realUser == "unknown" then
-        realUser = curren_session.user
+        realUser = current_session.user
     end if
 
     print("\n<color=#F79B11>" + realUser + "@" + current_session.computerName + "</color>:<color=#C1FDFF>" + current_path +"</color>--(<color=#E66AFF>" + current_session.publicAddress + "</color>)-" + "-(<color=#FA5D91>" + current_session.lanAddress + "</color>)--" + "[<color=#27F53F>" + current_session.type + "</color>]")
@@ -2743,12 +2786,14 @@ while(true)
                 if trackingInfoList == 0 then
                     print("Unable to connect.")
                 else
-                    trackingSSH(trackingInfoList, current_session)
+                    sshResult = trackingSSH(trackingInfoList, current_session)
+                    current_session = sshResult
                 end if
 
 
             else
                 sshResult = internalSSH(parameters_list, current_session)
+                current_session = sshResult
             end if
         end if 
 
