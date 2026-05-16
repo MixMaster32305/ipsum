@@ -47,6 +47,7 @@ printHelpInfo = function()
 <color=#F2AFFF>jump</color> : Usage-- <color=#FFFFFF>jump</color> --: <color=#3DF19D>Builds a jump file on the current session that will load metaxploit.so and a router into the session for use (otherwise cannot use metaxploit-dependent commands). Deletes file after running.</color>\n
 <color=#F2AFFF>sudo</color> : Usage-- <color=#FFFFFF>sudo [user] [password]</color> --: <color=#3DF19D>Lets you login to a different user and updates the given session. Uses a jump file to get the new shell.</color>\n
 <color=#F2AFFF>ssh</color> : Usage-- <color=#FFFFFF>ssh user@password [public ip] or ssh [list]</color> --: <color=#3DF19D>Lets you obtain a session through ssh connection, or list tracked ssh sessions from tracking.dat to choose from.\n
+<color=#F2AFFF>smtp-users</color> : Usage-- <color=#FFFFFF>smtp-users [public ip]</color> --: <color=#3DF19D>Lets you obtain the emails from an open smtp port.\n
 <color=#F2AFFF>clearsessions</color> : Usage-- <color=#FFFFFF>clearsessions</color> --: <color=#3DF19D>Clears all sessions except host and clears logs from the sessions before deletion.</color>\n
 <color=#F2AFFF>delsession</color> : Usage-- <color=#FFFFFF>delsession</color> --: <color=#3DF19D>Lets you select a session to delete.</color>\n
 <color=#F2AFFF>clear</color> : Usage -- <color=#FFFFFF>clear</color> --: <color=#3DF19D>Clears text from the terminal.</color>\n
@@ -448,6 +449,34 @@ clearLog = function(current_session)
     			print("Log file not found.")
     		end if
     end if
+end function
+
+smtp_users = function(parameters_list)
+if parameters_list.len != 1 or parameters_list[0] == "-h" or parameters_list[0] == "--help" then
+    print("<b>Usage: smtp-users [public IP with open SMTP port]</b>")
+    return 0
+end if
+crypto = include_lib("/lib/crypto.so")
+	if not crypto then
+    	crypto = include_lib(current_path + "/crypto.so")
+	end if
+	if not crypto then
+        print("Error: Can't find crypto library in the /lib path nor the current folder.\n")
+        return 0
+    end if
+
+result = crypto.smtp_user_list(parameters_list[0], 25)
+
+if result != null then
+    for email in result
+        print(email)
+    end for
+    return 1
+else
+    print("No email users found.")
+    return 0
+end if
+
 end function
 
 doNmap = function(ip_address, current_session)
@@ -1305,9 +1334,7 @@ if database_matched == false then
 	end if
 end if
 
-uneditedContent = database_file.get_content()
-editedContent = uneditedContent.replace("Shell", "<color=#27F53F>Shell</color>").replace("root", "<color=#27F53F>root</color>").replace("Failed", "<color=#ED2000>Failed</color>").replace("guest", "<color=#C0C0C0>guest</color>").replace("Computer", "<color=#ABC6FF>Computer</color>").replace("File", "<color=#CEEC7A>File</color>").replace("Other", "<color=#FF46E0>Other</color>").replace("/<color=#27F53F>root</color>", "/root")
-print(editedContent) // reading
+displayDatabaseContents(database_file)
 selected_int = user_input("Input the integer for which hack you'd like to run: ")
 if selected_int == "exit" then
 	print("User exited program...")
@@ -1494,6 +1521,26 @@ else
 	print("Error: expected shell, file, computer, or int, obtained: " + result)
 	return 0
 end if
+end function
+
+displayDatabaseContents = function(file)
+    file_deserialized = deserialize_astm(file)
+    info = "INDEX TYPE PRIVILEGE REQS PORT IP"
+
+    for row in file_deserialized
+    	index = row[0]
+    	type = row[1]
+    	privilege = row[2]
+    	reqs = row[7]
+    	ip = row[4]
+    	port = row[3]
+    
+    	info = info + "\n" + index + " " + type + " " + privilege + " " + reqs + " " + port + " " + ip
+    end for
+
+    colorless_info = format_columns(info)
+    color_info = colorless_info.replace("Shell", "<color=#27F53F>Shell</color>").replace("root", "<color=#27F53F>root</color>").replace("Failed", "<color=#ED2000>Failed</color>").replace("guest", "<color=#C0C0C0>guest</color>").replace("Computer", "<color=#ABC6FF>Computer</color>").replace("File", "<color=#CEEC7A>File</color>").replace("Other", "<color=#FF46E0>Other</color>").replace("/<color=#27F53F>root</color>", "/root")
+    print(color_info)
 end function
 
 tryPullFile = function(file, hostShell, remote_path)
@@ -2795,7 +2842,10 @@ while(true)
                 sshResult = internalSSH(parameters_list, current_session)
                 current_session = sshResult
             end if
-        end if 
+        end if
+    
+    else if command == "smtp-users" then
+        smtp_users(parameters_list)
 
     else if command == "track" then
         if parameters_list.len != 2 and parameters_list.len != 1 then
