@@ -2264,7 +2264,8 @@ rshellInterface = function(current_session)
 			return current_session
 		end if
 
-		if(shells.len == 0) then wait(2)
+		if(shells.len == 0) then 
+        wait(2)
         quitOrStay = user_input("Exit?\nY or N: ")
         if quitOrStay.lower == "y" or quitOrStay.lower == "yes" then
             print("Exiting rshell-interface")
@@ -2272,6 +2273,7 @@ rshellInterface = function(current_session)
         else
             continue
         end if
+    end if
 	end while
 
 	option = 0
