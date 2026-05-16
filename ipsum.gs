@@ -957,6 +957,12 @@ classifyRequirements = function(segment)
 			else if classifier == "namespace" then
 				req_symbols = req_symbols + "l,"
 
+            else if classifier == "computers" then
+                req_symbols = req_symbols + "c,"
+
+            else if classifier == "port" then
+                req_symbols = req_symbols + "f,"
+
 			else
 				print("Unrecognized requirement found in: " + segment)
 			end if
@@ -1071,12 +1077,13 @@ end function
 //TestDatabase
 testDatabase = function(current_session, parameter_list)
 if parameter_list.len > 3 or parameter_list.len < 2 or parameter_list[0] == "-h" or parameter_list[0] == "--help" then
-    print("<b>Usage: "+program_path.split("/")[-1]+" [ip_address] [port] or -l [local lib path] or -l [local lib path] [lan ip]</b>")
+    print("<b>Usage: testdatabase [ip_address] [port] or -l [local lib path] or -l [local lib path] [lan ip]</b>")
     return 0
 end if
 
 isLocal = false
 useLanIP = false
+testBounce = false
 
 if parameter_list[0] == "-l" then
 	isLocal = true
@@ -1098,8 +1105,10 @@ hostComputer = g.stack[0].object.host_computer
 file_contents = []
 
 if isLocal == false then
-	address = parameter_list[0]
-	port = parameter_list[1].to_int
+    if port == 0 then
+        testBounce = true
+    end if
+
 	netSession = metax.net_use( address, port )
 	if not netSession then
         print("Error: can't connect to net session")
@@ -1147,12 +1156,24 @@ loop_counter = 0
 for entry in file_contents
 	memory_address = entry[5]
 	vuln_value = entry[6]
+    bounceOccurred = false
 
 	if useLanIP == false then
 		result = metaLib.overflow(memory_address, vuln_value)
 	else if useLanIP == true then
 		result = metaLib.overflow(memory_address, vuln_value, address)
 	end if
+
+    //If the initial result failed and it's a router, get a lan device ip from the router and see if the exploit works as a bounce.
+    if testBounce == true and result == 0 then
+        router = get_router(address)
+        lan_devices = router.devices_lan_ip
+        result = metaLib.overflow(memory_address, vuln_value, lan_devices[0])
+
+        if result != 0 and typeof(result) != "string" then
+            bounceOccurred = true
+        end if
+    end if
 
 	returned_type = check_return_type(result)
 
@@ -1169,7 +1190,11 @@ for entry in file_contents
 		returned_privilege = "?"
 
 	end if
+
 	print(returned_type)
+    if bounceOccurred == true then
+        returned_type = "B-" + returned_type
+    end if
 	reserialized_content = reserialized_content + reserialize(entry[0], returned_type, returned_privilege, entry[3], entry[4], entry[5], entry[6], entry[7])
 	loop_counter = loop_counter + 1
 end for
@@ -1343,11 +1368,16 @@ end if
 
 //Executing the overflow.
 selected_entry = file_contents[selected_int.val - 1]
+type = selected_entry[1]
 memory_address = selected_entry[5]
 overflow_value = selected_entry[6]
 
 if is_local == true and useLanIP == true then
 	result = metaLib.overflow(memory_address, overflow_value, lan_address)
+
+else if type == "B-Computer" then
+    bounceHack(address, metaLib, memory_address, overflow_value)
+    return 0
 	
 else
 	result = metaLib.overflow(memory_address, overflow_value)
@@ -1391,7 +1421,7 @@ if typeof(result) == "shell" then
             return resultSession
 		end if
 
-//Add options to check for file existence, access file, copy file, move file/corrupt log.
+//Computer submenu
 else if typeof(result) == "computer" then
 	print("Obtained access to computer: " + result.get_name)
 	while(true)
@@ -1595,6 +1625,7 @@ end function
 //Returns string with path if successful, 0 if not.
 usablePathForUser = function(user, current_session)
     currentShell = current_session.object
+    currentComputer = currentShell.host_computer
 
     if user == "guest" then
         return "/home/guest"
@@ -1603,18 +1634,19 @@ usablePathForUser = function(user, current_session)
         return "/root"
 
     else if user == "unknown" then
-        findUser = getUserFromHandler(currentShell.host_computer)
+        findUser = getUserFromHandler(currentComputer)
         if findUser == "unknown" then
             //Try root, home, guest, libs, bin, etc, var, user folders. If none, fail.
             options = ["/root", "/home", "/home/guest", "/lib", "/bin", "/var", "/usr/bin", "/boot"]
+            users = currentComputer.File("/home").get_folders()
 
             //Adding user accounts to options.
-            for user in findUser.File("/home").get_folders()
+            for user in users
                 options.push("/home/" + user)
             end for
 
             for option in options
-                optionFile = findUser.File(option)
+                optionFile = currentComputer.File(option)
                 if optionFile != null and optionFile.has_permission("wx") then
                     return optionFile
                 else
@@ -1627,7 +1659,7 @@ usablePathForUser = function(user, current_session)
 
     //User   
     else
-        realUser = getUserFromHandler(currentShell.host_computer)
+        realUser = getUserFromHandler(currentComputer)
         return "/home/" + realUser
     end if
 end function
@@ -2488,6 +2520,125 @@ selectTrackingOption = function()
     end for
     print("Index not found")
     return 0
+end function
+
+//Will display the lan ips connected and let you choose one.
+bounceHack = function(ip, metaLib, memory_address, overflow_value)
+router = get_router(ip)
+lan_addresses = router.devices_lan_ip
+
+index_counter = 0
+for address in lan_addresses
+    print(index_counter + ": " + address)
+    index_counter = index_counter + 1
+end for
+
+selected_index = user_input("Select an index to target: ").to_int
+
+if typeof(selected_index) != "number" or lan_addresses.hasIndex(selected_index) == 0 then
+    print("Invalid index given, exiting...")
+    return 0
+end if
+
+lan_address = lan_addresses[selected_index]
+result = metaLib.overflow(memory_address, overflow_value, lan_address)
+
+//Computer submenu
+    if typeof(result) == "computer" then
+	print("Obtained access to computer: " + result.get_name)
+	while(true)
+		user_answer = user_input("\nPlease pick a subroutine:\n(1)Print user accounts\n(2)Crack passwords\n(3)Get Bank/Email\n(4)Get file/folder contents\n(5)Change password\n(6)Delete a file\n(7)Clear log\n(8)Corrupt system\n(9)Create guest user\n(10)Exit\nInput an integer: ")
+		answer = user_answer.val
+		print("\n")
+
+		if answer == 1 then
+			printUsers(result)
+
+		else if answer == 2 then
+			checkPassword(result)
+		
+		else if answer == 3 then
+			printPassEmails(result)
+
+		else if answer == 4 then
+			filePath = user_input("Input file/folder path to print: ", 0, 0, 1)
+			filePathExists = result.File(filePath)
+
+			if filePathExists == null then 
+				print("File/Folder not found.")
+				continue
+
+			else if filePathExists.is_folder == 1 then
+				print("Permissions: " + filePathExists.permissions)
+				printFolderContents(result, filePath)
+
+			else
+				print("Permissions: " + filePathExists.permissions)
+				printFile(result, filePath)
+			end if
+
+		else if answer == 5 then
+			passResult = result.change_password("root", "swagger")
+            if typeof(passResult) == "string" or passResult == null then
+                print("Failed to change password: " + passResult)
+            else
+                print("Password changed to 'swagger'")
+            end if
+
+		else if answer == 6 then
+			deleteFilePath = user_input("Input file path to delete: ", 0, 0, 1)
+			deleteFile = result.File(deleteFilePath)
+
+			if deleteFile == null then
+				print("File not found")
+
+			else if deleteFile.has_permission("w") != 1 then
+				print("User does not have write permissions.")
+				
+			else
+				deleteFile = deleteFile.delete
+				deleteResult = deleteFile.delete
+				if deleteResult.len == 0 then
+					print("File deleted successfully.")
+
+				else
+					print("Error while deleting file: " + deleteResult)
+
+				end if
+			end if
+
+		else if answer == 7 then
+			corruptLog(result)
+
+		else if answer == 8 then
+			corruptSystem(result)
+
+		else if answer == 9 then
+			accountCreateResult = result.create_user("guest2", "Bonzai")
+			if accountCreateResult == 1 then
+				print("User guest2@Bonzai created")
+
+			else
+				print("Failed to create new user: " + accountCreateResult)
+			end if
+
+		else if answer == 10 then
+			print("Exiting program...")
+			return 1
+
+		else
+			print("Invalid selection.")
+
+		end if
+	end while
+
+else if result == 0 then
+    return 0
+
+else
+    print("Non-computer object obtained: " + result)
+    return 0
+end if
 end function
 
 getUsersNet = function(comp)
