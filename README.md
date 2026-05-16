@@ -250,6 +250,17 @@ pull /bin/chainsaw /bin
 ```
 ---
 
+### `smtp-users`
+Allows you to get the emails from an open smtp port.
+```
+smtp-users [public ip]
+```
+**Example:**
+```
+smtp-users 42.32.76.140
+```
+---
+
 ### `sl`
 Uploads ScanLan.exe to /usr/bin on the session pc and launches it
 
