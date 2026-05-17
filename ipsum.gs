@@ -55,6 +55,7 @@ printHelpInfo = function()
 <color=#F2AFFF>clearall</color> : Usage-- <color=#FFFFFF>clearall</color> --: <color=#3DF19D>Clears the logs of every obtained session in the stack.</color>\n
 <color=#F2AFFF>remind</color> : Usage-- <color=#FFFFFF>txt</color> --: <color=#3DF19D>Searches through tracking.dat for the current session's public IP, reports its password.</color>\n
 <color=#F2AFFF>txt</color> : Usage-- <color=#FFFFFF>txt</color> --: <color=#3DF19D>Creates or opens a mission.txt file in /root.</color>\n
+<color=#F2AFFF>log</color> : Usage-- <color=#FFFFFF>log or log [dl] or log[dr]</color> --: <color=#3DF19D>Opens logviewer, downloads the log of the current session to /var/Downloads, or opens the log currently in /var/Downloads.</color>\n
 <color=#F2AFFF>track</color> : Usage-- <color=#FFFFFF>track [password] [ssh available true or false] or [list]</color> --: <color=#3DF19D>Tracks a session in /Databases/tracking.dat and can allow ssh [list] to reconnect later. Use 'true' if the session has an ssh port, else use false.</color>\n
 <color=#F2AFFF>terminal</color> : Usage-- <color=#FFFFFF>terminal</color> --: <color=#3DF19D>Switches to a native bash terminal on the session shell.</color>\n
 <color=#F2AFFF>help</color> : Usage-- <color=#FFFFFF>help</color> --: <color=#3DF19D>Prints information for all available commands.</color>\n
@@ -819,7 +820,13 @@ end function
 
 //Checks /home folder for users, prints out names.
 printUsers = function(remoteComputer)
-users = remoteComputer.File("/home").get_folders
+home_file = remoteComputer.File("/home")
+if home_file == null then
+    print("Could not access /home")
+    return 0
+end if
+users = home_file.get_folders
+
 if users.len == 0 then
 	print("No user accounts found.")
     return 0
@@ -1622,6 +1629,36 @@ tryDownloadToPath = function(current_session, parameters_list)
     end if
 end function
 
+//Takes string filepath and filepath location on host pc.
+tryTakeFile = function(file_location, destination_location, current_session)
+    currentShell = current_session.object
+    currentComputer = currentShell.host_computer
+    hostShell = g.stack[0].object
+    hostComputer = hostShell.host_computer
+    file = currentComputer.File(file_location)
+    destination = hostComputer.File(destination_location)
+
+    if file == null then
+        print("File path not found on remote PC.")
+        return 0
+
+    else if destination == null then
+        print("Destination path not found on host PC.")
+        return 0
+
+    else
+        downloadSuccess = currentShell.scp(file_location, destination_location, hostShell, 0)
+        if downloadSuccess != 1 then
+            print("Error downloading " + file_location)
+            return 0
+        
+        else if downloadSuccess == 1 then
+            return 1
+        end if
+    end if
+
+end function
+
 //Returns string with path if successful, 0 if not.
 usablePathForUser = function(user, current_session)
     currentShell = current_session.object
@@ -2187,6 +2224,16 @@ crack = function(parameters_list)
     end if
 end function
 
+ps = function(current_session)
+    if params.len > 0 then 
+        print(command_info("ps_usage"))
+        return 0
+    end if
+    output = current_session.object.host_computer.show_procs
+    print(format_columns(output))
+    return 1
+end function
+
 readDatabase = function()
     hostComputer = get_shell.host_computer
     databaseFolder = hostComputer.File("/Databases")
@@ -2643,6 +2690,79 @@ else
 end if
 end function
 
+doLog = function(parameters_list, current_session)
+    if parameters_list.len > 1 then
+        print("Usage: Log or Log [dl] or log[dr]")
+        return 0
+    end if
+
+    currentShell = current_session.object
+    currentComputer = currentShell.host_computer
+    hostShell = g.stack[0].object
+    hostComputer = hostShell.host_computer
+    download = false
+    viewDownload = false
+    logViewer = currentComputer.File("/usr/bin/LogViewer.exe")
+    logFile = currentComputer.File("/var/system.log")
+
+    if parameters_list.len > 0 and parameters_list[0] == "dl" then
+        download = true
+
+    else if parameters_list.len > 0 and parameters_list[0] == "dr" then
+        viewDownload = true
+    end if
+
+    if download == false then
+
+        if logViewer == null then
+            print("Error: cannot access LogViewer.exe")
+            return 0
+
+        else
+            if viewDownload == false then
+                currentShell.launch("usr/bin/LogViewer.exe")
+                return 1
+
+            else if viewDownload == true then
+                filePresent = hostComputer.File("/var/Downloads/system.log")
+                if filePresent == null then
+                    print("No downloaded log to read.")
+                    return 0
+
+                else
+                    hostShell.launch("usr/bin/LogViewer.exe", "/var/Downloads/system.log")
+                    return 1
+                end if
+            end if
+        end if
+
+    else if download == true then
+
+        if  logFile == null then
+            print("Error: cannot access log file.")
+            return 0
+
+        else
+            if hostComputer.File("/var/Downloads") == null then
+                hostComputer.create_folder("/var", "Downloads")
+                print("/var/Downloads created...")
+            end if
+
+            takeResult = tryTakeFile("/var/system.log", "/var/Downloads", current_session)
+            if takeResult == 1 then
+                print("Log downloaded.")
+                return 1
+
+            else
+                print("Failed to download log.")
+                return 0
+            end if
+        end if
+    end if
+
+
+end function
+
 getUsersNet = function(comp)
     homeFile = comp.File("/home")
     result = homeFile.get_folders
@@ -2843,7 +2963,9 @@ while(true)
         end if
 
     else if command == "sl" then
-        tryPullFile("/usr/bin/ScanLan.exe", current_session.object, "/usr/bin")
+        if sessionComputer.File("/usr/bin/ScanLan.exe") == null then
+            tryPullFile("/usr/bin/ScanLan.exe", current_session.object, "/usr/bin")
+        end if
         current_session.object.launch("/usr/bin/ScanLan.exe")
 
     else if command == "libs" then
@@ -2902,6 +3024,12 @@ while(true)
         if launchResult != 1 then
             print("Failed to launch AdminMonitor.exe from /usr/bin")
         end if
+
+    else if command == "log" then
+        doLog(parameters_list, current_session)
+
+    else if command == "ps" then
+        ps(current_session)
 
     else if command == "rshell-server" then
         if parameters_list.len != 0 then
