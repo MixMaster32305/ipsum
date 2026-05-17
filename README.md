@@ -261,6 +261,17 @@ smtp-users 42.32.76.140
 ```
 ---
 
+### `log`
+log is a shortcut to LogViewer.exe, log dl downloads the log of the current session to /var/Downloads on the host pc, log dr reads the downloaded from /var/Downloads.
+
+**Examples:**
+```
+log
+log dl
+log dr
+```
+---
+
 ### `sl`
 Uploads ScanLan.exe to /usr/bin on the session pc and launches it
 
