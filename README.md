@@ -46,6 +46,22 @@ Connect automatically connects you to your remote server and loads its metax. Fi
 
 ---
 
+## Exploit Requirements
+The databases also store exploit requirements as single alpha characters. Legend of their meanings:
+```
+r = An active root user must be present on the PC.
+g = An active guest user must be present on the PC.
+u = An active user must be present on the PC.
+n = A number of users must be registered on the PC.
+p = A path must be present on the PC.
+l = A library version must be present on the PC.
+c = A number of computers must be connected to the router.
+f = A number of forwarded ports must be configured on the router.
+e = An existing connection must be present on the PC.
+```
+
+---
+
 # Optional Dependency : Chainsaw by NitroCynic
 **Original Github page for Chainsaw:** https://github.com/jwfraustro/chainsaw
 
