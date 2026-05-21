@@ -970,6 +970,9 @@ classifyRequirements = function(segment)
             else if classifier == "port" then
                 req_symbols = req_symbols + "f,"
 
+            else if classifier == "existing" then
+                req_symbols = req_symbols + "e,"
+
 			else
 				print("Unrecognized requirement found in: " + segment)
 			end if
@@ -1370,6 +1373,11 @@ displayDatabaseContents(database_file)
 selected_int = user_input("Input the integer for which hack you'd like to run: ")
 if selected_int == "exit" then
 	print("User exited program...")
+    return 0
+end if
+
+if file_contents.hasIndex(selected_int.val - 1) == 0 then
+    print("Index not found.")
     return 0
 end if
 
