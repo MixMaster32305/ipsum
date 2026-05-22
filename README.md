@@ -62,6 +62,11 @@ e = An existing connection must be present on the PC.
 
 ---
 
+## Setting a Password for ipsum
+Ipsum optionally supports having a hard-coded user password if the user wishes to configure one. In the code, search for "ipsum_password" and set it to your desired password before uncommenting the code chunk.
+
+---
+
 # Optional Dependency : Chainsaw by NitroCynic
 **Original Github page for Chainsaw:** https://github.com/jwfraustro/chainsaw
 
