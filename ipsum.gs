@@ -3280,7 +3280,6 @@ while(true)
             end if
             jumpFile(current_session, parameters_list, "jump")
             current_session = updateSession(current_session)
-            clearLog(current_session)
         end if
 
     //Can use password cracker for root password. Takes username password.
