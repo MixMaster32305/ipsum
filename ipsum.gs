@@ -1504,7 +1504,6 @@ else if typeof(result) == "computer" then
 				print("User does not have write permissions.")
 				
 			else
-				deleteFile = deleteFile.delete
 				deleteResult = deleteFile.delete
 				if deleteResult.len == 0 then
 					print("File deleted successfully.")
@@ -3047,7 +3046,7 @@ end function
 
 
 //Program starts.
-//Only shells can be used in stack currently. Can modify for computers later, just keep submenu for now.
+//Password check. Uncomment block below to enable the password.
 // ipsum_password = "swag"
 // user_pass_input = user_input("Password: ", 1)
 // if user_pass_input != ipsum_password then
@@ -3056,6 +3055,7 @@ end function
 // end if
 
 //Actual program begins after password check.
+//Only shells can be used in stack currently. Can modify for computers later, just keep submenu for now.
 baseComputer = get_shell.host_computer
 hostSession = createSession(get_shell, active_user)
 addSession(hostSession)
@@ -3280,6 +3280,7 @@ while(true)
             end if
             jumpFile(current_session, parameters_list, "jump")
             current_session = updateSession(current_session)
+            clearLog(current_session)
         end if
 
     //Can use password cracker for root password. Takes username password.
