@@ -26,13 +26,15 @@ printHelpInfo = function()
 <color=#F2AFFF>pull</color> : Usage-- <color=#FFFFFF>pull [filepath to upload from host pc] [filepath to upload file to on current session pc]</color> --: <color=#3DF19D>An scp -u equivalent that uploads a desired file from your host pc to a filepath on the remote PC.</color>\n
 <color=#F2AFFF>sl</color> : Usage-- <color=#FFFFFF>sl</color> --: <color=#3DF19D>Uploads ScanLan.exe to the current session and launches it.\n
 <color=#F2AFFF>libs</color> : Usage-- <color=#FFFFFF>libs</color> --: <color=#3DF19D>Automatically uploads metaxploit.so, crypto.so, and librshell.so from your host pc to the current session.</color>\n
-<color=#F2AFFF>nmap</color> : Usage-- <color=#FFFFFF>nmap [public or lan ip]</color> --: <color=#3DF19D>Will scan a public or lan ip for ports. Note: must use [jump] in a session before scanning lan ips, scanning lan ips uses a local jump file for execution.</color>\n
+<color=#F2AFFF>nmap</color> : Usage-- <color=#FFFFFF>nmap [public or lan ip] or nmap [random]</color> --: <color=#3DF19D>Will scan a public or lan ip for ports (or a random ip). Note: must use [jump] in a session before scanning lan ips, scanning lan ips uses a local jump file for execution.</color>\n
 <color=#F2AFFF>findpass</color> : Usage-- <color=#FFFFFF>findpass</color> --: <color=#3DF19D>Prints the contents of /etc/passwd if it's present.\n
 <color=#F2AFFF>findmail</color> : Usage-- <color=#FFFFFF>findmail</color> --: <color=#3DF19D>Prints the contents of /home/user/Config/Mail.txt for all users if it's present.</color>\n
 <color=#F2AFFF>findbank</color> : Usage-- <color=#FFFFFF>findbank </color>--: <color=#3DF19D>Prints the contents of /home/user/Config/Bank.txt for all users if it's present.</color>\n
+<color=#F2AFFF>findhackshop</color> : Usage-- <color=#FFFFFF>findhackshop </color>--: <color=#3DF19D>Cycles through random IPs until it finds one with port 1542, then prints it.</color>\n
 <color=#F2AFFF>checklibs</color> : Usage-- <color=#FFFFFF>checklibs or checklibs -l [filepath to lib]</color> --: <color=#3DF19D>Checks version numbers of all libraries in /libs, or of a designated one using the -l flag. Requires [jump] to have been used in the session.</color>\n
 <color=#F2AFFF>readdatabase</color> : Usage-- <color=#FFFFFF>readdatabase</color> --: <color=#3DF19D>Lets you pick a cached service/library exploit file to read through (the ones generated from createcache/testdatabase).</color>\n
-<color=#F2AFFF>crack</color> : Usage-- <color=#FFFFFF>crack [hash string]</color> --: <color=#3DF19D>lets you copy/paste a hash into the command to crack its password.</color>\n
+<color=#F2AFFF>setup</color> : Usage-- <color=#FFFFFF>setup</color> --: <color=#3DF19D>Sets up the folders used by ipsum, /Databases, /PoisonLibs, /SafeLibs, and /var/Downloads.</color>\n
+<color=#F2AFFF>crack</color> : Usage-- <color=#FFFFFF>crack [hash string]</color> --: <color=#3DF19D>Lets you copy/paste a hash into the command to crack its password.</color>\n
 <color=#F2AFFF>secure</color> : Usage-- <color=#FFFFFF>secure home or secure server or secure prepare</color> --: <color=#3DF19D>Secures the system through managing file ownership, permissions, and deleting attack surfaces. Secure home creates exceptions to not lock the user out of their home pc, Secure server locks down remote pcs that you have root credentials for, Secure prepare unlocks certain files on your host PC used/transferred during attacks.</color>\n
 <color=#F2AFFF>nethack</color> : Usage-- <color=#FFFFFF>nethack</color> --: <color=#3DF19D>Gathers emails, passwords, bank information from every local device connect to the router this is ran on. Note: This command uses a hard-coded exploit for the init.so library resident on your host PC. Edit libVersion, mem_value, and vuln_value in the nethack function before use.</color>\n
 <color=#F2AFFF>sniffer</color> : Usage-- <color=#FFFFFF>sniffer</color> --: <color=#3DF19D>Starts a sniffer listener on the current session. Cannot be canceled once started.</color>\n
@@ -879,9 +881,22 @@ end function
 //Prints emails/passwords
 printPassEmails = function(remoteComputer)
 users = remoteComputer.File("/home").get_folders
-if users.len == 0 then
+rootUser = remoteComputer.File("/root")
+if users.len == 0  and rootUser == null then
 	print("No user accounts found.")
 else
+    rootBank =remoteComputer.File("/root/Config/Bank.txt")
+    rootEmail = remoteComputer.File("/root/Config/Mail.txt")
+    if rootBank != null then
+        print("Bank info from: root")
+		print(rootBank.get_content + "\n")
+    end if
+
+    if rootEmail != null then
+        print("Mail info from: root")
+		print(rootEmail.get_content + "\n")
+    end if
+
 	for user in users
 		bankResult = remoteComputer.File("/home/" + user.name + "/Config/Bank.txt")
 		emailResult = remoteComputer.File("/home/" + user.name + "/Config/Mail.txt")
@@ -1664,7 +1679,26 @@ tryTakeFile = function(file_location, destination_location, current_session)
             return 1
         end if
     end if
+end function
 
+//Pass a folder path like /root/, and file name like PoisonLibs. Don't pass full path.
+tryMakeFolder = function(folder_path, folder_name, computer)
+if computer.File(folder_path + folder_name) == null then
+
+    adjusted_folder_path = ""
+    if folder_path != "/" then
+        adjusted_folder_path = folder_path[:-1]
+    else
+        adjusted_folder_path = folder_path
+    end if
+
+	folder_created = computer.create_folder(adjusted_folder_path, folder_name)
+	if folder_created == 1 then
+		print(folder_path + folder_name + " folder created...")
+	else
+		print("Failed to create " + folder_path + folder_name + " folder...")
+	end if
+end if
 end function
 
 //Returns string with path if successful, 0 if not.
@@ -2767,8 +2801,104 @@ doLog = function(parameters_list, current_session)
             end if
         end if
     end if
+end function
 
+do_cat = function(parameters_list, current_session)
+    if parameters_list.len != 1 or parameters_list[0] == "-h" or parameters_list[0] == "--help" then 
+    	print(command_info("cat_usage"))
+    	return 0
+    end if
 
+    pathFile = parameters_list[0]
+    file = current_session.object.host_computer.File(pathFile)
+
+    if file == null then
+    	print("cat: file not found: "+ pathFile)
+    	return 0
+    end if
+    if file.is_binary then 
+    	print("cat: can't open " + file.path + ". Binary file")
+    	return 0
+    end if
+    if not file.has_permission("r") then 
+    	print("cat: permission denied")
+    	return 0
+    end if
+
+    print(file.get_content)
+    return 1
+end function
+
+//Random IP generator 'borrowed' from HEX by redit0 (I'm not giving it back).
+getRandomIP = function()
+    reserved = [{"from":0,"to":16777215},
+        {"from":167772160,"to":184549375},
+        {"from":1681915904,"to":1686110207},
+        {"from":2130706432,"to":2147483647},
+        {"from":2851995648,"to":2852061183},
+        {"from":2886729728,"to":2887778303},
+        {"from":3221225472,"to":3221225727},
+        {"from":3221225984,"to":3221226239},
+        {"from":3227017984,"to":3323068416},
+        {"from":3325256704,"to":3325256959},
+        {"from":3405803776,"to":3405804031},
+        {"from":3758096384,"to":4026531839},
+        {"from":4026531840,"to":4294967295}]
+
+    int_to_ip = function(num)
+        if num < 0 or num > 4294967295 then return null
+        
+        parts = []
+        for i in range(0, 3)
+            parts.push(floor(num / (256 ^ (3 - i))) % 256)
+        end for
+        
+        return parts.join(".")
+    end function
+
+    router = null
+
+    while not router
+        num = floor(rnd * 4294967295)
+
+        if num >= reserved[0].from and num <= reserved[0].to then continue
+        if num >= reserved[1].from and num <= reserved[1].to then continue
+        if num >= reserved[2].from and num <= reserved[2].to then continue
+        if num >= reserved[3].from and num <= reserved[3].to then continue
+        if num >= reserved[4].from and num <= reserved[4].to then continue
+        if num >= reserved[5].from and num <= reserved[5].to then continue
+        if num >= reserved[6].from and num <= reserved[6].to then continue
+        if num >= reserved[7].from and num <= reserved[7].to then continue
+        if num >= reserved[8].from and num <= reserved[8].to then continue
+        if num >= reserved[9].from and num <= reserved[9].to then continue
+        if num >= reserved[10].from and num <= reserved[10].to then continue
+        if num >= reserved[11].from and num <= reserved[11].to then continue
+        if num >= reserved[12].from and num <= reserved[12].to then continue
+
+        router = get_router(int_to_ip(num))
+    end while
+
+    return router.public_ip
+end function
+
+//Also 'borrowed' from HEX.
+getHackShop = function()
+ip = null
+hackshop = 0
+while not hackshop
+    ip = getRandomIP()
+    if not is_lan_ip(ip) then
+        router = get_router(ip)
+        if not router then continue
+        ports = router.used_ports
+        for port in ports
+            if port.port_number == 1542 and not port.is_closed then
+                hackshop = 1
+                return router.public_ip
+            end if
+        end for
+    end if
+end while
 end function
 
 getUsersNet = function(comp)
@@ -2780,6 +2910,10 @@ end function
 searchEmails = function(computers)
 for comp in computers
     users = getUsersNet(comp)
+    rootEmail = comp.File("/root/Config/Mail.txt")
+    if rootEmail != null then
+        print("Email from " + comp.local_ip + " user: root\n" + rootEmail.get_content + "\n")
+    end if
     for user in users
         emailFile = comp.File("/home/" + user.name + "/Config/Mail.txt")
         if emailFile == null then
@@ -2794,6 +2928,10 @@ end function
 searchBanks = function(computers)
 for comp in computers
     users = getUsersNet(comp)
+    rootBank = comp.File("/root/Config/Bank.txt")
+    if rootBank != null then
+        print("Bank from " + comp.local_ip + " user: root\n" + rootBank.get_content + "\n")
+    end if
     for user in users
         emailFile = comp.File("/home/" + user.name + "/Config/Bank.txt")
         if emailFile == null then
@@ -2890,10 +3028,34 @@ nethack = function(current_session)
     end while
 end function
 
+//Sets up the /Databases, /root/PoisonLibs, /root/SafeLibs, /var/Downloads folders
+doSetup = function(current_session)
+hostComputer = current_session.object.host_computer
+databasesFolder = hostComputer.File("/Databases")
+varDlFolder = hostComputer.File("/var/Downloads")
+poisonLibsFolder = hostComputer.File("/PoisonLibs")
+safeLibsFolder = hostComputer.File("/SafeLibs")
+
+tryMakeFolder("/", "Databases", hostComputer)
+tryMakeFolder("/root/", "PoisonLibs", hostComputer)
+tryMakeFolder("/root/", "SafeLibs", hostComputer)
+tryMakeFolder("/var/", "Downloads", hostComputer)
+print("Setup finished.")
+return 1
+end function
+
 
 
 //Program starts.
-//Don't bother adding computers and files to stack currently, just shells. Can modify for computers later, just keep submenu for now.
+//Only shells can be used in stack currently. Can modify for computers later, just keep submenu for now.
+// ipsum_password = "swag"
+// user_pass_input = user_input("Password: ", 1)
+// if user_pass_input != ipsum_password then
+//     print("Invalid password.")
+//     exit
+// end if
+
+//Actual program begins after password check.
 baseComputer = get_shell.host_computer
 hostSession = createSession(get_shell, active_user)
 addSession(hostSession)
@@ -2987,7 +3149,13 @@ while(true)
             print("Usage: [public IP]")
 
         else
-            doNmap(parameters_list[0], current_session)
+            if parameters_list[0].lower == "random" then
+                doNmap(getRandomIP(), current_session)
+
+            else
+                doNmap(parameters_list[0], current_session)
+
+            end if
         end if
 
     else if command == "findpass" then
@@ -3005,6 +3173,13 @@ while(true)
     else if command == "findbank" then
         currentComputer = [current_session.object.host_computer]
         searchBanks(currentComputer)
+
+    else if command == "findhackshop" then
+        print("Please wait, this may take a moment...")
+        print(getHackShop())
+
+    else if command == "setup" then
+        doSetup(current_session)
 
     else if command == "checklibs" then
         checklibs(current_session, parameters_list)
@@ -3038,6 +3213,10 @@ while(true)
 
     else if command == "ps" then
         ps(current_session)
+
+
+    else if command == "cat" then
+        do_cat(parameters_list, current_session)
 
     else if command == "rshell-server" then
         if parameters_list.len != 0 then
