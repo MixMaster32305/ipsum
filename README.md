@@ -90,13 +90,15 @@ To run chainsaw manually, just upload and use "chainsaw run". Otherwise, hack wi
 # Commands
 
 ### `nmap`
-Scans a public or lan IP for ports. Will report both forwarded and internal ports. Scanning lan IPs uses a jump file which are deleted once used.
+Scans a public or lan IP for ports. Will report both forwarded and internal ports (or a random IP). Scanning lan IPs uses a jump file which are deleted once used.
 ```
 nmap [ip address]
+nmap [random]
 ```
 **Example:**
 ```
 nmap 42.32.76.140
+nmap random
 ```
 ---
 
@@ -340,6 +342,15 @@ findbank
 ```
 ---
 
+### `findhackshop`
+Will cycle through random IP addresses until finding one with a potential hackshop in it.
+
+**Example:**
+```
+findhackshop
+```
+---
+
 ### `crack`
 Deciphers a hash string you pass into it and prints out the deciphered password.
 ```
@@ -379,6 +390,13 @@ Locks down file permissions and deletes attack surfaces like Mail.txt, Bank.txt,
 secure home
 secure server
 secure prepare
+```
+---
+
+### `setup`
+Sets up all folders potentially used by ipsum beforehand. /Databases, /root/PoisonLibs, /root/SafeLibs, and /var/Downloads.
+```
+setup
 ```
 ---
 
