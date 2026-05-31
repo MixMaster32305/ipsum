@@ -483,6 +483,13 @@ remind
 ```
 ---
 
+### `readmail`
+Searches for all Mail.txt files on the device, decrypts the passwords, and accumulates their emails for you to search through.
+```
+readmail
+```
+---
+
 ### `txt`
 Creates and or opens /root/mission.txt for keeping notes.
 ```
