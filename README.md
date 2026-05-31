@@ -27,7 +27,7 @@ chainsaw is only necessary to use the privilege escalation component of hack, ot
 These commands use hard-coded values, so to use them you first need to go into the code and find the nethack function or the connect function respectively.
 
 ### Nethack
-Nethack uses a hardcoded value from your init.so library that it'll transfer to a router for exploitation. First, run hack -l /lib/init.so on your local PC to find a computer bounce exploit, then go to the nethack function in ipsum's code and find the following variables: **libVersion**, **mem_value**, **vuln_value** (ctrl + f and search for "nethack =")and edit these with the memory region/vuln value of one of the found bounce exploits, and change libVersion to that of your init.so library (can check using checklibs command)
+Nethack uses a hardcoded value from a library in /root/PoisonLibs (cant setup using 'setup' command) that it'll transfer to a router for exploitation. First, run hack -l /lib/init.so on your local PC to find a computer bounce exploit, use cp /lib/init.so /root/PoisonLibs to copy it to PoisonLibs, then go to the nethack function in ipsum's code and find the following variables: **libVersion**, **mem_value**, **vuln_value** (ctrl + f and search for "nethack =")and edit these with the memory region/vuln value of one of the found bounce exploits, and change libVersion to that of your library (can check using checklibs command)
 
 ### Connect
 Connect automatically connects you to your remote server and loads its metax. Find the variables **ip** and **password** in ipsum's connect function (ctrl + f and search for "connect =") and change them to those of your remote server.
@@ -406,7 +406,7 @@ setup
 ---
 
 ### `nethack`
-Used for attacking local devices attached to a router, can only be ran on a router. Requires setup in the source code via finding a bounce exploit in your local init.so library, as nethack will upload this library to the router in order to execute the attack reliably. See Nethack setup section above.
+Used for attacking local devices attached to a router, can only be ran on a router. Requires setup in the source code via finding a bounce exploit in a local library placed in /root/PoisonLibs, as nethack will upload this library to the router in order to execute the attack reliably. See Nethack setup section above.
 ```
 nethack
 ```
