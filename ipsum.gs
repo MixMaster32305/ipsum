@@ -35,7 +35,7 @@ printHelpInfo = function()
 <color=#F2AFFF>readdatabase</color> : Usage-- <color=#FFFFFF>readdatabase</color> --: <color=#3DF19D>Lets you pick a cached service/library exploit file to read through (the ones generated from createcache/testdatabase).</color>\n
 <color=#F2AFFF>setup</color> : Usage-- <color=#FFFFFF>setup</color> --: <color=#3DF19D>Sets up the folders used by ipsum, /Databases, /PoisonLibs, /SafeLibs, and /var/Downloads.</color>\n
 <color=#F2AFFF>crack</color> : Usage-- <color=#FFFFFF>crack [hash string]</color> --: <color=#3DF19D>Lets you copy/paste a hash into the command to crack its password.</color>\n
-<color=#F2AFFF>secure</color> : Usage-- <color=#FFFFFF>secure home or secure server or secure prepare</color> --: <color=#3DF19D>Secures the system through managing file ownership, permissions, and deleting attack surfaces. Secure home creates exceptions to not lock the user out of their home pc, Secure server locks down remote pcs that you have root credentials for, Secure prepare unlocks certain files on your host PC used/transferred during attacks.</color>\n
+<color=#F2AFFF>secure</color> : Usage-- <color=#FFFFFF>secure home or server or prepare or safelibs</color> --: <color=#3DF19D>Secures the system through managing file ownership, permissions, and deleting attack surfaces. Secure home creates exceptions to not lock the user out of their home pc, Secure server locks down remote pcs that you have root credentials for, Secure prepare unlocks certain files on your host PC used/transferred during attacks.</color>\n
 <color=#F2AFFF>nethack</color> : Usage-- <color=#FFFFFF>nethack</color> --: <color=#3DF19D>Gathers emails, passwords, bank information from every local device connect to the router this is ran on. Note: This command uses a hard-coded exploit for the init.so library resident on your host PC. Edit libVersion, mem_value, and vuln_value in the nethack function before use.</color>\n
 <color=#F2AFFF>sniffer</color> : Usage-- <color=#FFFFFF>sniffer</color> --: <color=#3DF19D>Starts a sniffer listener on the current session. Cannot be canceled once started.</color>\n
 <color=#F2AFFF>admon</color> : Usage-- <color=#FFFFFF>admon</color> --: <color=#3DF19D>Starts AdminMonitor.exe from /usr/bin.</color>\n
@@ -1632,15 +1632,17 @@ tryPullLib = function(libPath, hostShell)
 	print("Uploading: " + libPath + "...")
 	uploadSuccess = hostShell.scp(libPath, "/lib", baseShell, 1)
 	if uploadSuccess != 1 then
-		print("Error uploading: " + libPath + " to /lib, trying current path...")
+		print("Error uploading: " + libPath + " to /lib, trying current path: " + uploadSuccess)
 		retryUpload = hostShell.scp(libPath, currentPath, baseShell, 1)
 		if retryUpload == 1 then
 			print("Successfully uploaded " + libPath + " to current path.")
+            return 1
 		else
-			print("Failed to upload " + libPath + " to current path.")
+			print("Failed to upload " + libPath + " to current path: " + retryUpload)
+            return 0
 		end if
 	end if
-
+    return 1
 end function
 
 tryDownloadToPath = function(current_session, parameters_list)
@@ -2129,7 +2131,8 @@ secure = function(current_session, parameters_list)
     end if
 
     homeOrServer = parameters_list[0]
-    computer = current_session.object.host_computer
+    currentShell = current_session.object
+    computer = currentShell.host_computer
 
     if active_user != "root" then
         print("Program can only be ran by the root user.")
@@ -2139,7 +2142,7 @@ secure = function(current_session, parameters_list)
     //Lock the system, make an exception for terminal, bash, and sudo, then delete /etc/passwd, home/user/Config files (Bank.txt and Mail.txt), make sure guest user is deleted
     //Exceptions should only be g+x, user settings do not apply since root is owner.
     //passwd is a txt file but does not have the .txt suffix, only /etc/passwd.
-    if homeOrServer == "home" or homeOrServer == "Home" then
+    if homeOrServer.lower == "home" then
         rootFile = computer.File("/")
         terminalFile = computer.File("/usr/bin/Terminal.exe")
         bashFile = computer.File("/bin/bash")
@@ -2196,7 +2199,7 @@ secure = function(current_session, parameters_list)
         return 1
 
 
-    else if homeOrServer == "server" or homeOrServer == "Server" then
+    else if homeOrServer.lower == "server" then
     rootFile = computer.File("/")
         users = getUsers(computer)
 
@@ -2230,7 +2233,7 @@ secure = function(current_session, parameters_list)
         return 1
 
 
-    else if homeOrServer == "Prepare" or homeOrServer == "prepare" then
+    else if homeOrServer.lower == "prepare" then
         chainsawFile = computer.File("/bin/chainsaw")
         binFile = computer.File("/bin")
         scanLanFile = computer.File("/usr/bin/ScanLan.exe")
@@ -2254,6 +2257,25 @@ secure = function(current_session, parameters_list)
         print("System prepared for action.")
         return 1
 
+    else if homeOrServer.lower == "safelibs" then
+        hostComputer = g.stack[0].object.host_computer
+        host_safelibs = hostComputer.File("/root/SafeLibs")
+        sessionLibFile = computer.File("/lib")
+
+        if host_safelibs == null then
+            print("No /root/SafeLibs folder present on host pc. Please swap to the host pc and use [setup]")
+            return 0
+        end if
+
+        if sessionLibFile == null then
+            print("No /lib folder present on the current computer.")
+            return 0
+        end if
+
+        for file in host_safelibs.get_files
+            tryPullLib("/root/SafeLibs/" + file.name, currentShell)
+        end for
+        print("safelibs finished.")
     end if
 end function
 
@@ -3105,11 +3127,11 @@ nethack = function(current_session)
     routerComputer = routerShell.host_computer
     
     //Multiplayer
-    // lib = "/root/PoisonLibs/init.so"
-    //router_lib_path = "/lib/init.so"
-    // libVersion = "1.0.4"
-    // mem_value = "0x3A986814"
-    // vuln_value = "dividen"
+    // lib = "/root/PoisonLibs/libhttp.so"
+    // router_lib_path = "/lib/libhttp.so"
+    // libVersion = "1.0.0"
+    // mem_value = "0x1F000FB5"
+    // vuln_value = "length"
 
     //Single-player
     lib = "/root/PoisonLibs/init.so"
@@ -3129,6 +3151,7 @@ nethack = function(current_session)
         return 0
     end if
     
+    //If there's ever an error, look here, metax.load.version might be throwing an error if the fullLib == null doesn't stop it from running.
     if fullLib == null or metax.load(router_lib_path).version != libVersion then
         tryPullLib(lib, routerShell)
     end if
@@ -3164,7 +3187,11 @@ nethack = function(current_session)
         all_emails_map = {} //Format: {email address:[local ip, [emails], metaMail]}
         for computer in computers
             computer_emails_map = getMailContents(computer)
-            all_emails_map = mergeMaps(all_emails_map, computer_emails_map)
+            if computer_emails_map != 0 and computer_emails_map.len != 0 then
+                all_emails_map = mergeMaps(all_emails_map, computer_emails_map)
+            else 
+                continue
+            end if
         end for
         readMail(all_emails_map)
     
