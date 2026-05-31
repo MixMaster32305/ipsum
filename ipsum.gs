@@ -1192,11 +1192,24 @@ for entry in file_contents
     //If the initial result failed and it's a router, get a lan device ip from the router and see if the exploit works as a bounce.
     if testBounce == true and result == 0 then
         router = get_router(address)
-        lan_devices = router.devices_lan_ip
-        result = metaLib.overflow(memory_address, vuln_value, lan_devices[0])
+        if router == null then
+            print("ipsum Error: Could not reach router during bounce exploit.")
+            result = "B-Failed"
+        else
+            lan_devices = router.devices_lan_ip
+            if lan_devices.len > 1 and lan_devices[1] != router.local_ip then
+                result = metaLib.overflow(memory_address, vuln_value, lan_devices[1])
 
-        if result != 0 and typeof(result) != "string" then
-            bounceOccurred = true
+            else if lan_devices.len == 1 and lan_devices[0] != router.local_ip then
+                result = metaLib.overflow(memory_address, vuln_value, lan_devices[0])
+
+            else
+                result = metaLib.overflow(memory_address, vuln_value, lan_devices[0])
+                print("No lan-connected devices found for router, potential bounce exploit tested against the router itself.")
+            end if
+            if result != 0 and typeof(result) != "string" then
+                bounceOccurred = true
+            end if
         end if
     end if
 
@@ -2240,9 +2253,10 @@ secure = function(current_session, parameters_list)
     end if
 end function
 
+//Returns decrypted password on success, 0 on failure.
 crack = function(parameters_list)
     if parameters_list.len != 1 or parameters_list[0] == "-h" or parameters_list[0] == "--help" then 
-        print("<b>Usage: "+program_path.split("/")[-1]+" [encrypted password]</b>")
+        print("<b>Usage: crack [encrypted password]</b>")
         return 0
     end if
     crypto = include_lib("/lib/crypto.so")
@@ -2258,7 +2272,7 @@ crack = function(parameters_list)
 
     if decryptedPass != null then
     	print(decryptedPass)
-        return 1
+        return decryptedPass
     else
     	print("Error processing the hash.\n")
         return 0
@@ -2273,6 +2287,120 @@ ps = function(current_session)
     output = current_session.object.host_computer.show_procs
     print(format_columns(output))
     return 1
+end function
+
+//Returns list of strings, each string being a user:email
+returnEmails = function(computer)
+    emails = []
+
+    users = getUsersNet(computer)
+    rootEmail = computer.File("/root/Config/Mail.txt")
+    if rootEmail != null then
+        emails.push(rootEmail.get_content)
+    end if
+    for user in users
+        emailFile = computer.File("/home/" + user.name + "/Config/Mail.txt")
+        if emailFile == null then
+            continue
+        else
+            emails.push(emailFile.get_content)
+        end if
+    end for
+
+    return emails
+end function
+
+//Only returns the mail. Returns a 2d list.
+//[lan_ip, [mails], metaMail]
+getMailContents = function(computer)
+    email_accounts = returnEmails(computer) //This returns the whole user/hash string
+    emails_and_meta_map = {}
+
+    for mail_file_row in email_accounts
+        split_mail_contents = mail_file_row.split(":")
+        email = split_mail_contents[0]
+        password_hash_list = [split_mail_contents[1]] //crack takes a list of parameters.
+        password = crack(password_hash_list)
+
+        if password == 0 then
+            print("Failed to crack password for: " + email)
+            continue
+        end if
+
+        metaMail = mail_login(email, password)
+        if metaMail == null then
+            print("Email login failed for: " + email)
+            continue
+
+        else 
+            emails_result = metaMail.fetch()
+
+            if typeof(emails_result) == "string" then
+                print("Issue while fetching emails from " + email + ": " + emails_result)
+                continue
+            end if
+
+            emails_and_meta_map[email] = [ computer.local_ip, emails_result, metaMail ]
+        end if
+    end for
+
+    if emails_and_meta_map.len == 0 then
+        return 0
+    end if
+
+    return emails_and_meta_map
+end function //Change this one so it doens't do the searching, modify readMail so it gets the users and calls this several times in a for loop, then appends each returned list
+             //into a 2d list
+
+//Gets passed in a map {email_account:[local_ip, [emails], metaMail]}
+readMail = function(emails_map)
+
+    if emails_map.len == 0 then
+        print("No email messages found.")
+        return 0
+    end if
+
+    index_map = {} //Maps a selectable index to a message and lan ip. Index as the key, lan ip and message stored in a list as the value.
+    lan_index = 0
+    selection_menu = "" //Repeats the selection options in the while loop.
+    for key in emails_map.indexes
+        lanIP = emails_map[key][0]
+        emails = emails_map[key][1]
+        metaMail = emails_map[key][2]
+        for email in emails
+            index_map[lan_index] = [email, metaMail] //Add the lan ip and email to the index map so the user input later can select it and know which pc it's from.
+            mail_segments = email.split(char(10))
+            mail_subject = mail_segments[4][9:]
+            selection_menu = selection_menu + lan_index + ":<color=#FA5D91>" + lanIP + "</color>- <color=#FFFFFF>" + mail_subject + "</color>: " + mail_segments[5][:17] + "-" +"\n"
+            lan_index = lan_index + 1
+        end for
+    end for
+
+    selection_menu = selection_menu + "exit: Exit the selection menu."
+
+    //Mail selection starts here
+    while true
+        print(selection_menu)
+        selected_index = user_input("Select which index to read: ")
+
+        if selected_index.lower == "exit" then
+            "exiting..."
+            return 0
+        end if
+
+        sanitized_index = selected_index.to_int
+        if index_map.hasIndex(sanitized_index) == 0 then
+            print("Index is invalid.")
+            continue
+        end if
+
+        metaMail = index_map[sanitized_index][1]
+        selected_mail = index_map[sanitized_index][0]
+        segments = selected_mail.split(char(10))
+        mailId = segments[2][8:]
+        print(metaMail.read(mailId))
+        user_input("Press enter to continue...")
+    end while
 end function
 
 readDatabase = function()
@@ -3055,7 +3183,7 @@ end function
 // end if
 
 //Actual program begins after password check.
-//Only shells can be used in stack currently. Can modify for computers later, just keep submenu for now.
+//Only shells can be used in stack currently.
 baseComputer = get_shell.host_computer
 hostSession = createSession(get_shell, active_user)
 addSession(hostSession)
@@ -3315,6 +3443,15 @@ while(true)
     else if command == "smtp-users" then
         smtp_users(parameters_list)
 
+    else if command == "readmail" then
+        emails_and_metamail_map = getMailContents(current_session.object.host_computer)
+        if emails_and_metamail_map == 0 then
+            print("No emails found.")
+
+        else
+            readMail(emails_and_metamail_map)
+        end if
+
     else if command == "track" then
         if parameters_list.len != 2 and parameters_list.len != 1 then
             print("Usage: [list] or [password] [ssh connection available true or false]")
@@ -3365,6 +3502,17 @@ while(true)
 
     else if command == "help" then
         printHelpInfo()
+
+    else if command == "i'm" then
+        print_string = "
+  _____ _             _       
+ |_   _( )           (_)      
+   | | |/ _ __ ___    _ _ __  
+   | |   | '_ ` _ \  | | '_ \ 
+  _| |_  | | | | | | | | | | |
+ |_____| |_| |_| |_| |_|_| |_|"
+        print(print_string)
+        print("(-■_■)")
 
     else if command == "exit" then
         print("Exiting program...")
