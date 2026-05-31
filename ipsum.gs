@@ -29,6 +29,7 @@ printHelpInfo = function()
 <color=#F2AFFF>nmap</color> : Usage-- <color=#FFFFFF>nmap [public or lan ip] or nmap [random]</color> --: <color=#3DF19D>Will scan a public or lan ip for ports (or a random ip). Note: must use [jump] in a session before scanning lan ips, scanning lan ips uses a local jump file for execution.</color>\n
 <color=#F2AFFF>findpass</color> : Usage-- <color=#FFFFFF>findpass</color> --: <color=#3DF19D>Prints the contents of /etc/passwd if it's present.\n
 <color=#F2AFFF>findmail</color> : Usage-- <color=#FFFFFF>findmail</color> --: <color=#3DF19D>Prints the contents of /home/user/Config/Mail.txt for all users if it's present.</color>\n
+<color=#F2AFFF>readmail</color> : Usage-- <color=#FFFFFF>readmail</color> --: <color=#3DF19D>Decrypts and aggregates emails from all email accounts on the pc.\n
 <color=#F2AFFF>findbank</color> : Usage-- <color=#FFFFFF>findbank </color>--: <color=#3DF19D>Prints the contents of /home/user/Config/Bank.txt for all users if it's present.</color>\n
 <color=#F2AFFF>findhackshop</color> : Usage-- <color=#FFFFFF>findhackshop </color>--: <color=#3DF19D>Cycles through random IPs until it finds one with port 1542, then prints it.</color>\n
 <color=#F2AFFF>checklibs</color> : Usage-- <color=#FFFFFF>checklibs or checklibs -l [filepath to lib]</color> --: <color=#3DF19D>Checks version numbers of all libraries in /libs, or of a designated one using the -l flag. Requires [jump] to have been used in the session.</color>\n
@@ -305,7 +306,7 @@ end function
 
 connect = function(current_session)
     current_shell = current_session.object
-    ip = "xx.xxx.xx"
+    ip = "xx.xxx.xxx.xx"
     user = "root"
     password = "chud"
     port = 22
@@ -3034,8 +3035,8 @@ getRandomIP = function()
     return router.public_ip
 end function
 
-//Also 'borrowed' from HEX.
-getHackShop = function()
+//Also 'borrowed' from HEX and modified. Port_number is the port to search for.
+getIPWithPort = function(target_port)
 ip = null
 hackshop = 0
 while not hackshop
@@ -3045,7 +3046,7 @@ while not hackshop
         if not router then continue
         ports = router.used_ports
         for port in ports
-            if port.port_number == 1542 and not port.is_closed then
+            if port.port_number == target_port and not port.is_closed then
                 hackshop = 1
                 return router.public_ip
             end if
@@ -3368,7 +3369,19 @@ while(true)
 
     else if command == "findhackshop" then
         print("Please wait, this may take a moment...")
-        print(getHackShop())
+        output = getIPWithPort(1542)
+        doNmap(output, current_session)
+        print(output)
+
+    else if command == "findport" then
+        if parameters_list.len != 1 or parameters_list[0].val == 0 then
+            print("Usage: findport [port number]")
+        else
+            print("Please wait, this may take a moment...")
+            output = getIPWithPort(parameters_list[0].val)
+            doNmap(output, current_session)
+            print(output)
+        end if
 
     else if command == "setup" then
         doSetup(current_session)
