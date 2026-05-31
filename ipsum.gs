@@ -1193,7 +1193,7 @@ for entry in file_contents
     if testBounce == true and result == 0 then
         router = get_router(address)
         if router == null then
-            print("ipsum Error: Could not reach router during bounce exploit.")
+            print("ipsum Error: Could not reach router during bounce exploit. Try running exploit locally on router.")
             result = "B-Failed"
         else
             lan_devices = router.devices_lan_ip
@@ -2238,6 +2238,8 @@ secure = function(current_session, parameters_list)
         cryptoLib = computer.File("/lib/crypto.so")
         initLib = computer.File("/lib/init.so")
         sshLib = computer.File("/lib/libssh.so")
+        poisonLibFile = computer.File("/root/PoisonLibs")
+        safeLibsFile = computer.File("/root/SafeLibs")
 
         tryChmod(binFile, "g+rwx", 1)
         tryChmod(chainsawFile, "o+rwx", 0)
@@ -2246,6 +2248,8 @@ secure = function(current_session, parameters_list)
         tryChmod(cryptoLib, "g+rwx", 0)
         tryChmod(initLib, "g+rwx", 0)
         tryChmod(sshLib, "g+rwx", 0)
+        tryChmod(poisonLibFile, "g+rwx", 0)
+        tryChmod(safeLibsFile, "g+rwx", 0)
 
         print("System prepared for action.")
         return 1
@@ -3100,12 +3104,22 @@ nethack = function(current_session)
     routerShell = current_session.object
     routerComputer = routerShell.host_computer
     
-    lib = "/lib/init.so"
+    //Multiplayer
+    // lib = "/root/PoisonLibs/init.so"
+    //router_lib_path = "/lib/init.so"
+    // libVersion = "1.0.4"
+    // mem_value = "0x3A986814"
+    // vuln_value = "dividen"
+
+    //Single-player
+    lib = "/root/PoisonLibs/init.so"
+    router_lib_path = "/lib/init.so"
     libVersion = "1.0.4"
-    mem_value = "0x3A986814"
-    vuln_value = "dividen"
+    mem_value = "0x4FEF613B"
+    vuln_value = "toendres"
+
     libFolder = routerComputer.File("/lib")
-    fullLib = routerComputer.File("/lib/init.so")
+    fullLib = routerComputer.File(router_lib_path)
     
     devicesLanIP = router.devices_lan_ip
     
@@ -3115,12 +3129,12 @@ nethack = function(current_session)
         return 0
     end if
     
-    if fullLib == null or metax.load(lib).version != libVersion then
+    if fullLib == null or metax.load(router_lib_path).version != libVersion then
         tryPullLib(lib, routerShell)
     end if
     
     //Begin attack.
-    metalib = metax.load(lib)
+    metalib = metax.load(router_lib_path)
     
     computers = []
     for device in devicesLanIP
@@ -3135,7 +3149,7 @@ nethack = function(current_session)
     
     //Result submenu.
     while(true)
-    selection = user_input("\nSelect a subroutine:\n(1)Print emails\n(2)Print bank information\n(3)Search for passwords\n(4)Exit\nInput an integer: ").val
+    selection = user_input("\nSelect a subroutine:\n(1)Print emails\n(2)Print bank information\n(3)Search for passwords\n(4)Read through emails\n(5)Exit\nInput an integer: ").val
     
     if selection == 1 then
         searchEmails(computers)
@@ -3145,8 +3159,16 @@ nethack = function(current_session)
     
     else if selection == 3 then
         searchPasswords(computers)
-    
+
     else if selection == 4 then
+        all_emails_map = {} //Format: {email address:[local ip, [emails], metaMail]}
+        for computer in computers
+            computer_emails_map = getMailContents(computer)
+            all_emails_map = mergeMaps(all_emails_map, computer_emails_map)
+        end for
+        readMail(all_emails_map)
+    
+    else if selection == 5 then
         print("Exiting program...")
         return 1
     else
@@ -3154,6 +3176,21 @@ nethack = function(current_session)
     end if
     end while
 end function
+
+//Merges map2 into map1
+mergeMaps = function(map1, map2)
+
+    for key in map2.indexes
+
+        if map1.hasIndex(key) then
+            print("ipsum Error during mergeMaps: key " + key + " present in map1. Data may have been overwritten.")
+        end if
+
+        map1[key] = map2[key]
+    end for
+
+    return map1
+    end function
 
 //Sets up the /Databases, /root/PoisonLibs, /root/SafeLibs, /var/Downloads folders
 doSetup = function(current_session)
