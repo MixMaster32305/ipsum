@@ -356,6 +356,15 @@ findhackshop
 ```
 ---
 
+### `findport`
+Will cycle through random IP addresses until finding one with the designated port number.
+
+**Example:**
+```
+findport 22
+```
+---
+
 ### `crack`
 Deciphers a hash string you pass into it and prints out the deciphered password.
 ```
@@ -390,11 +399,12 @@ readdatabase
 ---
 
 ### `secure`
-Locks down file permissions and deletes attack surfaces like Mail.txt, Bank.txt, and passwd files. Secure home is for use on your home PC as it will provide exceptions to commands like sudo and bash to not hard lock your pc, otherwise use secure server for remote PCs you have root access to. Secure prepare unlocks certain files that are often transferred during hacks.
+Locks down file permissions and deletes attack surfaces like Mail.txt, Bank.txt, and passwd files. Secure home is for use on your home PC as it will provide exceptions to commands like sudo and bash to not hard lock your pc, otherwise use secure server for remote PCs you have root access to. Secure prepare unlocks certain files that are often transferred during hacks. Secure safelibs uploads the libraries from root/SafeLibs to the /lib folder of the current shell.
 ```
 secure home
 secure server
 secure prepare
+secure safelibs
 ```
 ---
 
