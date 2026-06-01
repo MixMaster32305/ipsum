@@ -30,8 +30,9 @@ printHelpInfo = function()
 <color=#F2AFFF>findpass</color> : Usage-- <color=#FFFFFF>findpass</color> --: <color=#3DF19D>Prints the contents of /etc/passwd if it's present.\n
 <color=#F2AFFF>findmail</color> : Usage-- <color=#FFFFFF>findmail</color> --: <color=#3DF19D>Prints the contents of /home/user/Config/Mail.txt for all users if it's present.</color>\n
 <color=#F2AFFF>readmail</color> : Usage-- <color=#FFFFFF>readmail</color> --: <color=#3DF19D>Decrypts and aggregates emails from all email accounts on the pc.\n
-<color=#F2AFFF>findbank</color> : Usage-- <color=#FFFFFF>findbank </color>--: <color=#3DF19D>Prints the contents of /home/user/Config/Bank.txt for all users if it's present.</color>\n
-<color=#F2AFFF>findhackshop</color> : Usage-- <color=#FFFFFF>findhackshop </color>--: <color=#3DF19D>Cycles through random IPs until it finds one with port 1542, then prints it.</color>\n
+<color=#F2AFFF>findbank</color> : Usage-- <color=#FFFFFF>findbank</color>--: <color=#3DF19D>Prints the contents of /home/user/Config/Bank.txt for all users if it's present.</color>\n
+<color=#F2AFFF>findhackshop</color> : Usage-- <color=#FFFFFF>findhackshop</color>--: <color=#3DF19D>Cycles through random IPs until it finds one with port 1542, then prints it.</color>\n
+<color=#F2AFFF>findport</color> : Usage-- <color=#FFFFFF>findport 22</color>--: <color=#3DF19D>Cycles through random IPs until it finds one with the desginated port.</color>\n
 <color=#F2AFFF>checklibs</color> : Usage-- <color=#FFFFFF>checklibs or checklibs -l [filepath to lib]</color> --: <color=#3DF19D>Checks version numbers of all libraries in /libs, or of a designated one using the -l flag. Requires [jump] to have been used in the session.</color>\n
 <color=#F2AFFF>readdatabase</color> : Usage-- <color=#FFFFFF>readdatabase</color> --: <color=#3DF19D>Lets you pick a cached service/library exploit file to read through (the ones generated from createcache/testdatabase).</color>\n
 <color=#F2AFFF>setup</color> : Usage-- <color=#FFFFFF>setup</color> --: <color=#3DF19D>Sets up the folders used by ipsum, /Databases, /PoisonLibs, /SafeLibs, and /var/Downloads.</color>\n
