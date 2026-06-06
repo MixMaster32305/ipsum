@@ -580,7 +580,7 @@ for port in ports
    for forwardedPort in usedPorts
       if(port.get_lan_ip == forwardedPort.get_lan_ip and port.port_number == forwardedPort.port_number) then
          forwarded_status = "true"
-         if(port.is_closed) then
+         if(port.is_closed and not isLanIp) then //Added not isLanIp due to internal ports showing as closed when scanned locally from within the network. Remove entire check?
             port_status = "closed"
          else
             port_status = "open"
@@ -603,13 +603,8 @@ loadMetax = function(current_session)
     if not metax then
         metax = include_lib(current_path + "/metaxploit.so")
     end if
-    if not metax and current_session == g.stack[0] then 
-        print("Error: Can't find metaxploit library in the /lib path nor the current folder")
-        return 0
-
-    else if not metax then
-        print("Failed to load metaxploit for current session.")
-        return 0
+    if not metax then 
+        exit("ipsum Error: Can't find metaxploit.so library in the /lib path nor the current folder. Exiting...")
     end if
 
     current_session.metax = metax
@@ -677,6 +672,7 @@ else
 end if
 end function
 
+//Handler is a computer object.
 getUserFromHandler = function (handler)
     rootFile = handler.File("/root")
     if rootFile != null and rootFile.has_permission("w") then 
@@ -739,6 +735,10 @@ escalatePrivileges = function(remoteShell, privilege_level)
 
 	else if user == "root" then
 		print("root user obtained, no escalation needed.")
+        return 0
+
+    else if user == "unknown" then
+        print("Unable to determine a usable path: User is unknown.")
         return 0
 
 	//Reguler users
@@ -1193,7 +1193,9 @@ for entry in file_contents
 
     //If the initial result failed and it's a router, get a lan device ip from the router and see if the exploit works as a bounce.
     if testBounce == true and result == 0 then
-        router = get_router(address)
+        jump_parameters = [address]
+        jumpFile(current_session, jump_parameters, "nmaplan")
+        router = g.lan_router
         if router == null then
             print("ipsum Error: Could not reach router during bounce exploit. Try running exploit locally on router.")
             result = "B-Failed"
@@ -1279,7 +1281,7 @@ if is_local == true then
 		lan_address = parameter_list[2]
         sessionComputer = current_session.object.host_computer
         if sessionComputer.File(lib_path) == null then
-            print("Library unable to be found or invalid.")
+            print("Library unable to be found or is invalid.")
             return 0
         end if
 		metaLib = metax.load(lib_path)
@@ -1288,7 +1290,7 @@ if is_local == true then
 	else
 		lib_path = parameter_list[1]
         if sessionComputer.File(lib_path) == null then
-            print("Library unable to be found or invalid.")
+            print("Library unable to be found or is invalid.")
             return 0
         end if
 		metaLib = metax.load(lib_path)
@@ -1420,10 +1422,10 @@ overflow_value = selected_entry[6]
 if is_local == true and useLanIP == true then
 	result = metaLib.overflow(memory_address, overflow_value, lan_address)
 
-else if type == "B-Computer" then
-    bounceHack(address, metaLib, memory_address, overflow_value)
-    return 0
-	
+else if is_local == false and type == "B-Computer" then
+        bounceHack(address, metaLib, memory_address, overflow_value, current_session)
+        return 1
+
 else
 	result = metaLib.overflow(memory_address, overflow_value)
 end if
@@ -1440,27 +1442,24 @@ if typeof(result) == "shell" then
 			answer = user_input("Non-root shell obtained, escalate privileges?\nNote: make sure chainsaw has g+rwx and o+x rules applied\nY / N: ")
 
 			if answer == "y" or answer == "Y" then
-				resultSession = createSession(result, selected_entry[2])
+                user = getUserFromHandler(result.host_computer)
+				resultSession = createSession(result, user)
                 print("New session added for " + resultSession.lanAddress + " " + resultSession.computerName)
                 addSession(resultSession)
                 escalatePrivileges(result, resultSession.user)
 				return resultSession
 				
-			else if answer == "n" or answer == "N" then
-				resultSession = createSession(result, selected_entry[2])
-                print("New session added for " + resultSession.lanAddress + " " + resultSession.computerName)
-                addSession(resultSession)
-				return resultSession
-
 			else
-				resultSession = createSession(result, selected_entry[2])
+                user = getUserFromHandler(result.host_computer)
+				resultSession = createSession(result, user)
                 print("New session added for " + resultSession.lanAddress + " " + resultSession.computerName)
                 addSession(resultSession)
 				return resultSession
-			end if
+            end if
 
 		else
-			resultSession = createSession(result, selected_entry[2])
+            user = getUserFromHandler(result.host_computer)
+			resultSession = createSession(result, user)
             print("New session added for " + resultSession.lanAddress + " " + resultSession.computerName)
             addSession(resultSession)
             return resultSession
@@ -2769,8 +2768,14 @@ selectTrackingOption = function()
 end function
 
 //Will display the lan ips connected and let you choose one.
-bounceHack = function(ip, metaLib, memory_address, overflow_value)
-router = get_router(ip)
+bounceHack = function(ip, metaLib, memory_address, overflow_value, current_session)
+jump_parameters = [ip]
+jumpFile(current_session, jump_parameters, "nmaplan")
+router = g.lan_router
+if not router then
+    print("ipsum Error: Couldn't get targeted router.")
+    return 0
+end if
 lan_addresses = router.devices_lan_ip
 
 index_counter = 0
