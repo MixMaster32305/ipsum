@@ -370,6 +370,8 @@ internalSSH = function(parameters_list, current_session)
 end function
 
 trackingSSH = function(trackingInfo, current_session)
+print("trackingInfo")
+print(typeof(trackingInfo))
 if trackingInfo.len != 4 then
         print("Required parameters: [list]")
         return current_session
@@ -2671,12 +2673,20 @@ unpackTracking = function()
     hostComputer = g.stack[0].object.host_computer
 
     tracking = hostComputer.File("/Databases/tracking.dat")
+    if tracking == null then
+        print("No tracking file found")
+        return []
+    end if
     trackingLines = tracking.get_content.split("\\n")
     return trackingLines[:-1]
 end function
 
 showTrackingOptions = function()
     unpackedLines = unpackTracking()
+    if unpackedLines.len == 0 then
+        print("No connections currently tracked.")
+        return 0
+    end if
 
     index = 0
     for line in unpackedLines
@@ -2691,6 +2701,7 @@ showTrackingOptions = function()
         print(printString)
         index = index + 1
     end for
+    return 1
 end function
 
 selectSSHTrackingOptions = function()
@@ -3063,8 +3074,12 @@ end function
 
 getUsersNet = function(comp)
     homeFile = comp.File("/home")
-    result = homeFile.get_folders
-    return result
+    if homeFile != null then
+        result = homeFile.get_folders
+        return result
+    else
+        return ["none"]
+    end if
 end function
 
 searchEmails = function(computers)
@@ -3605,6 +3620,7 @@ while(true)
 
     //For normal bin commands.
     //Check first if it matches a program name in the /bin directory, /usr/bin, or current directory before failing. Use command_inpput[0] to retain capitalization.
+    //Could use .File() first to check before trying to launch to avoid error messages.
     else
         if parameters.len == 0 then
             launchSuccess = current_session.object.launch("/bin/" + command_input[0])
