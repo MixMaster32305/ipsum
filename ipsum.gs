@@ -412,6 +412,11 @@ remind = function(current_session)
     unpackedTracking = unpackTracking()
     sessionIP = current_session.publicAddress
 
+    if unpackedTracking.len == 0 then
+        print("No connections currently tracked.")
+        return 0
+    end if
+
     for line in unpackedTracking
         lineEntries = line.split(",")
         lineIP = lineEntries[1]
