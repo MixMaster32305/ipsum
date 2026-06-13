@@ -380,12 +380,14 @@ findport 22
 ---
 
 ### `crack`
-Deciphers a hash string you pass into it and prints out the deciphered password.
+Deciphers a hash string you pass into it and prints out the deciphered password. Using crack by itself deciphers the root password from /etc/passwd if available.
 ```
+crack
 crack [hash]
 ```
 **Example:**
 ```
+crack
 crack e16032b436d065949d78f58e8c073f4d
 ```
 ---
