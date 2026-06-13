@@ -273,6 +273,20 @@ pull /bin/chainsaw /bin
 ```
 ---
 
+[b]permiss[/b]
+Recursively resets permissions from root directory by default, or from the given filepath.
+
+```
+permiss
+permiss [file_path]
+```
+**Example:**
+```
+permiss
+permiss /home/Shibboleth
+```
+---
+
 ### `smtp-users`
 Allows you to get the emails from an open smtp port.
 ```
