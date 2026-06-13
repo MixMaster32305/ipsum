@@ -273,7 +273,7 @@ pull /bin/chainsaw /bin
 ```
 ---
 
-[b]permiss[/b]
+## `permiss`
 Recursively resets permissions from root directory by default, or from the given filepath.
 
 ```
