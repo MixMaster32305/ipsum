@@ -3493,7 +3493,26 @@ while(true)
         readDatabase()
 
     else if command == "crack" then
-        crack(parameters_list)
+        if parameters_list.len == 0 then
+            pass_file = sessionComputer.File("/etc/passwd")
+            if pass_file!= null then
+                pass_contents = pass_file.get_content()
+                if pass_contents != null then
+                    root_line = pass_contents.split(char(10))[0]
+                    root_hash = root_line.split(":")[1]
+                    crack([root_hash])
+
+                else
+                    print("Could not access /etc/passwd. Permissions: " + pass_file.permissions)
+                end if
+                
+            else
+                print("/etc/passwd not found.")
+            end if
+
+        else
+            crack(parameters_list)
+        end if
 
     else if command == "txt" then
         openTxt()
@@ -3698,8 +3717,8 @@ while(true)
         exit
 
     //For normal bin commands.
-    //Check first if it matches a program name in the /bin directory, /usr/bin, or current directory before failing. Use command_inpput[0] to retain capitalization.
-    //Could use .File() first to check before trying to launch to avoid error messages.
+    //Check first if it matches a program name in the /bin directory, /usr/bin, current directory, or full command path before failing.
+    //Uses command_inpput[0] to retain capitalization.
     else
         
         if parameters.len == 0 then
