@@ -1476,7 +1476,7 @@ if typeof(result) == "shell" then
 else if typeof(result) == "computer" then
 	print("Obtained access to computer: " + result.get_name)
 	while(true)
-		user_answer = user_input("\nPlease pick a subroutine:\n(1)Print user accounts\n(2)Crack passwords\n(3)Get Bank/Email\n(4)Get file/folder contents\n(5)Change password\n(6)Delete a file\n(7)Clear log\n(8)Corrupt system\n(9)Create guest user\n(10)Exit\nInput an integer: ")
+		user_answer = user_input("\nPlease pick a subroutine:\n(1)Print user accounts\n(2)Crack passwords\n(3)Get Bank/Email\n(4)Get file/folder contents\n(5)Change password\n(6)Delete a file\n(7)Clear log\n(8)Corrupt system\n(9)Create guest user\n(10)Recursively reset permissions to path\n(11)Exit\nInput an integer: ")
 		answer = user_answer.val
 		print("\n")
 
@@ -1550,7 +1550,11 @@ else if typeof(result) == "computer" then
 				print("Failed to create new user: " + accountCreateResult)
 			end if
 
-		else if answer == 10 then
+        else if answer == 10 then
+            permissPath = user_input("Input file path to begin the recursive permissions reset: ", 0, 0, 1)
+            addPermissions(result, permissPath)
+
+		else if answer == 11 then
 			print("Exiting program...")
 			return 1
 
@@ -1567,31 +1571,72 @@ else if typeof(result) == "file" then
 	print(filename)
 	print("Permissions: " + result.permissions)
 	print("Owned by: " + result.owner)
-	
-	if result.is_folder == 1 then
-		files = result.get_files
-		folders = result.get_folders
-		if filename == "etc" then
-			for folder in folders
-				print("Folder found: " + folder.name)
-			end for
-			for file in files
-				print(file.name + " contents:\n")
-				print(file.get_content)
-			end for
-		else
-			for folder in folders
-				print("Folder found: " + folder.name)
-			end for
-			for file in files
-				print(file.name + " contents:\n")
-				print(file.get_content)
-			end for
-		end if
-	else
-		print("Contents:\n" + result.get_content)
-		return 1
-	end if
+    while(true)
+		user_answer = user_input("\nPlease pick a subroutine:\n(1)Attempt to read contents\n(2)Print all files\n(3)Delete file(s)\n(4)Reset file permissions\n(5)Exit\nInput an integer: ")
+		answer = user_answer.val
+		print("\n")
+
+        if answer == 1 then
+	        if result.is_folder == 1 then
+	        	files = result.get_files
+	        	folders = result.get_folders
+	        	if filename == "etc" then
+	        		for folder in folders
+	        			print("Folder found: " + folder.name)
+	        		end for
+	        		for file in files
+	        			print(file.name + " contents:\n")
+	        			print(file.get_content)
+	        		end for
+	        	else
+	        		for folder in folders
+	        			print("Folder found: " + folder.name)
+	        		end for
+	        		for file in files
+	        			print(file.name + " contents:\n")
+	        			print(file.get_content)
+	        		end for
+	        	end if
+	        else
+	        	print("Contents:\n" + result.get_content)
+            end if
+
+        else if answer == 2 then
+            if result.is_folder then
+                print("Files:")
+                contents = result.get_files
+                for file in contents
+                    print(file.name)
+                end for
+
+            else
+                print("Result is not a folder.")
+            end if
+
+        else if answer == 3 then
+            delete_result = result.delete
+            if delete_result.len == 0 then
+                print("Deleted " + result.name)
+                
+            else
+                print("Unable to delete: " + delete_result)
+            end if
+
+        else if answer == 4 then
+            chmod1 = tryChmod(result, "g+rwx", 1)
+            chmod2 = tryChmod(result, "o+rwx", 1)
+            chmod3 = tryChmod(result, "u+rwx", 1)
+            if chmod1 == 0 or chmod2 == 0 or chmod3 == 0 then
+                print("Permissions failed to apply or did not apply fully.")
+            else
+                print("Permissions applied successfully.")
+            end if
+
+        else if answer == 5 then
+            print("Exiting program...")
+			return 1
+        end if
+    end while
 
 else if typeof(result) == "number" then
 	print("\n")
@@ -2124,7 +2169,7 @@ tryChmod = function(file, permission_string, recursion_int)
     end if
 
     if chmodResult != "" then
-        print("Failed to apply permissions to " + file.name)
+        print("Failed to apply permissions to " + file.name + ". Permissions: " + file.permissions)
         return 0
     else
         return 1
@@ -3262,6 +3307,26 @@ print("Setup finished.")
 return 1
 end function
 
+addPermissions = function(computer, file_path)
+    target_file = computer.File(file_path)
+    if target_file == null then
+        print("Failed to find file: " + file_path)
+        return 0
+    end if
+    result1 = tryChmod(target_file, "g+rwx", 1)
+    result2 = tryChmod(target_file, "o+rwx", 1)
+    result3 = tryChmod(target_file, "u+rwx", 1)
+
+    if result1 == 0 or result2 == 0 or result3 == 0 then
+        return 0
+
+    else
+        print("Permissions applied successfully.")
+        return 1
+    end if
+
+end function
+
 
 
 //Program starts.
@@ -3337,6 +3402,15 @@ while(true)
             end if
             jumpFile(current_session, parameters_list, "jump")
             current_session = updateSession(current_session)
+
+        else if command == "permiss" then
+            if parameters_list.len == 0 then
+                addPermissions(sessionComputer, "/")
+            else if parameters_list.len == 1 then
+                addPermissions(sessionComputer, parameters_list[0])
+            else
+                print("Usage: permiss or permiss [file path]")
+            end if
 
     else if command == "take" then
         tryDownloadToPath(current_session, parameters_list)
@@ -3627,27 +3701,55 @@ while(true)
     //Check first if it matches a program name in the /bin directory, /usr/bin, or current directory before failing. Use command_inpput[0] to retain capitalization.
     //Could use .File() first to check before trying to launch to avoid error messages.
     else
+        
         if parameters.len == 0 then
-            launchSuccess = current_session.object.launch("/bin/" + command_input[0])
-            if launchSuccess == 0 then
+            if sessionComputer.File("/bin/" + command_input[0]) != null then
+                launchSuccess = current_session.object.launch("/bin/" + command_input[0])
+
+            else if sessionComputer.File("/usr/bin/" + command_input[0]) != null then
                 launchSuccess = current_session.object.launch("/usr/bin/" + command_input[0])
-                if launchSuccess == 0 then
+
+            else if sessionComputer.File(current_path + "/" + command_input[0]) != null then
                     launchSuccess = current_session.object.launch(current_path + "/" + command_input[0])
-                end if
+                    
+            else if sessionComputer.File(command_input[0]) != null then
+                    launchSuccess = current_session.object.launch(command_input[0])
+
+            else
+                print("Error: Command not recognized.")
+            end if
+
+            if launchSuccess == 0 then
+                print("Failed to launch command")
+
+            else if typeof(launchSuccess) == "string" then
+                print("Failed to launch command: " + launchSuccess)
             end if
 
         else
-            launchSuccess = current_session.object.launch("/bin/" + command_input[0], parameters)
-            if launchSuccess == 0 then
+            if sessionComputer.File("/bin/" + command_input[0]) != null then
+                launchSuccess = current_session.object.launch("/bin/" + command_input[0], parameters)
+
+            else if sessionComputer.File("/usr/bin/" + command_input[0]) != null then
                 launchSuccess = current_session.object.launch("/usr/bin/" + command_input[0], parameters)
-                if launchSuccess == 0 then
+
+            else if sessionComputer.File(current_path + "/" + command_input[0]) != null then
                     launchSuccess = current_session.object.launch(current_path + "/" + command_input[0], parameters)
-                end if
+                    
+            else if sessionComputer.File(command_input[0]) != null then
+                    launchSuccess = current_session.object.launch(command_input[0], parameters)
+
+            else
+                print("Error: Command not recognized.")
+            end if
+
+            if launchSuccess == 0 then
+                print("Failed to launch command")
+
+            else if typeof(launchSuccess) == "string" then
+                print("Failed to launch command: " + launchSuccess)
             end if
 
         end if
-
-        if launchSuccess == 0 then print("Error: Command not recognized.")
-
     end if
 end while
