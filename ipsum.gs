@@ -370,8 +370,6 @@ internalSSH = function(parameters_list, current_session)
 end function
 
 trackingSSH = function(trackingInfo, current_session)
-print("trackingInfo")
-print(typeof(trackingInfo))
 if trackingInfo.len != 4 then
         print("Required parameters: [list]")
         return current_session
@@ -3720,6 +3718,7 @@ while(true)
     //Check first if it matches a program name in the /bin directory, /usr/bin, current directory, or full command path before failing.
     //Uses command_inpput[0] to retain capitalization.
     else
+        launchSuccess = 0
         
         if parameters.len == 0 then
             if sessionComputer.File("/bin/" + command_input[0]) != null then
