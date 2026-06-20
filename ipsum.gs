@@ -1065,9 +1065,8 @@ end if
 
 scanResult = hostMetax.scan(metaLib)
 
-loop_counter = 0
 for area in scanResult
-	scanAddress = hostMetax.scan_address(metaLib, scanResult[loop_counter])
+	scanAddress = hostMetax.scan_address(metaLib, area)
 	segments = scanAddress.split("Unsafe check: ")[1:]
 	overflowvalues = []
 	
@@ -1079,8 +1078,7 @@ for area in scanResult
    		overflowvalues.push(segment[labelStart + 3: labelEnd])
 	end for
 
-	exploits[scanResult[loop_counter]] = overflowvalues
-	loop_counter = loop_counter + 1
+	exploits[area] = overflowvalues
 end for
 
 //File writing.
