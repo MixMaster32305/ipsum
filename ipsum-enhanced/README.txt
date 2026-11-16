@@ -7,7 +7,7 @@ D. Updated database and tracking.dat files to use char(10) instead of \n for pro
 To install:
 1. Make a /ipsum folder on your in-game computer.
 2. Make an ipsum_main.src and ipsum_1.src file within the /ipsum folder.
-3. Copy the contents of ipsum_main.gs and ipsum_1.gs into their respective folders.
+3. Copy the contents of ipsum_main.gs and ipsum_1.gs into their respective files.
 4. Open ipsum_main.src and make a build.
 
 Possible future updates:
