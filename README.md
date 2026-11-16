@@ -12,6 +12,13 @@ Supports automated exploit scanning, testing, caching, and execution that utiliz
 ---
 
 ## Getting a Build of ipsum
+Step 1. Make a /ipsum folder on your in-game computer.
+Step 2. Make an ipsum_main.src and ipsum_1.src file within the /ipsum folder.
+Step 3. Copy the contents of ipsum_main.gs and ipsum_1.gs into their respective folders.
+Step 4. Open ipsum_main.src and make a build
+
+
+(Legacy Install Instructions)
 Step 1. Open the ipsum.gs file<br>
 Step 2. ctrl + a<br>
 Step 3. ctrl + c<br>
@@ -156,6 +163,24 @@ Creates a jump file on the current session to load its copy of metaxploit.so int
 **Example:**
 ```
 jump
+```
+---
+
+### `tree`
+Creates a tree of all files on the current pc and highlights files of interest (ones that are not default). Circumvents need to run FileExplorer.exe on remote systems, making it safer.
+
+**Example:**
+```
+tree
+```
+---
+
+### `zerod`
+Prints the real time left until the next zero day is available (or if it's currently available).
+
+**Example:**
+```
+zerod
 ```
 ---
 
@@ -495,10 +520,14 @@ clear
 Tracks the current session's IP and password in /Databases/tracking.dat along with the ssh connection availability bool. If ssh connection available is true, then it will appear during ssh list.
 ```
 track [password] [ssh connection available, true or false]
+track del
+track list
 ```
 **Example:**
 ```
 track axlo true
+track del
+track list
 ```
 ---
 
