@@ -9,3 +9,13 @@ To install:
 2. Make an ipsum_main.src and ipsum_1.src file within the /ipsum folder.
 3. Copy the contents of ipsum_main.gs and ipsum_1.gs into their respective folders.
 4. Open ipsum_main.src and make a build.
+
+Possible future updates:
+- Direct implementation of the chainsaw script into the tool.
+- Cryptographic functions
+- A rainbow table
+- Zero day support
+- Autohacking/network traversal
+- Deep network scanning
+
+But no promises. The tool only gets updated when my interest in grey hack returns.
