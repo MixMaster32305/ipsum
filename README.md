@@ -14,7 +14,7 @@ Supports automated exploit scanning, testing, caching, and execution that utiliz
 ## Getting a Build of ipsum
 Step 1. Make a /ipsum folder on your in-game computer.<br>
 Step 2. Make an ipsum_main.src and ipsum_1.src file within the /ipsum folder.<br>
-Step 3. Copy the contents of ipsum_main.gs and ipsum_1.gs into their respective folders.<br>
+Step 3. Copy the contents of ipsum_main.gs and ipsum_1.gs into their respective files.<br>
 Step 4. Open ipsum_main.src and make a build<br>
 
 
