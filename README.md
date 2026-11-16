@@ -18,7 +18,7 @@ Step 3. Copy the contents of ipsum_main.gs and ipsum_1.gs into their respective 
 Step 4. Open ipsum_main.src and make a build<br>
 
 
-(Legacy Install Instructions)
+(Legacy Install Instructions)<br>
 Step 1. Open the ipsum.gs file<br>
 Step 2. ctrl + a<br>
 Step 3. ctrl + c<br>
