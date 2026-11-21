@@ -493,31 +493,12 @@ print_help = function // Print the available commands
 	end for
 
 	print("Output:")
-	output_str = "
-	[Command]	[Output]			[Description]
-	[run]		----				(string) Password found.
-	[load]		ChainSaw.password	(string) Password found.
-	[load]		ChainSaw.shell		(shell) Shell object.
-	"
+	output_str = "	[Command]	[Output]			[Description]\n	[run]		----				(string) Password found.\n	[load]		ChainSaw.password	(string) Password found.\n	[load]		ChainSaw.shell		(shell) Shell object."
 
 	print(output_str)
 
 	print("Parameters:")
-	output_str = "
-	[Command]	[Parameter / GCO key]					[Default]	[Description]
-	[run/load]	--user/ChainSaw.user					'root'	 	User to connect/get shell as.
-	[run/load]	--ip/ChainSaw.ip						----	 	If provided, will connect to the specified IP address.
-	[run/load]	--port/ChainSaw.port					22		 	Port to connect to.
-	[run/load]	--min_length/ChainSaw.min_length	3		 	Minimum password length.
-	[run/load]	--max_length/ChainSaw.max_length	9		 	Maximum password length.
-	[run/load]	--order/ChainSaw.order					3		 	Order of the Markov chains.
-	[run/load]	--loglevel/ChainSaw.LogLevel		INFO	 	Log level. Options: INFO, WARN
-	[run/load]	--optimize_chains/ChainSaw.optimize_chains	false	Optimize chains by frequency. May speed up cracking.
-	[load]		ChainSaw.samples						Internal 	Samples to use for the Markov chains. Not recommended to change.
-	[load]		ChainSaw.pregens						Internal 	Pregenerated passwords for initial attack.
-	[load]		ChainSaw.password						Internal 	Password found.
-	[test]		--test_pass								Dessnap	 	Password to test against.
-	"
+	output_str = "	[Command]	[Parameter / GCO key]					[Default]	[Description]\n	[run/load]	--user/ChainSaw.user					'root'	 	User to connect/get shell as.\n	[run/load]	--ip/ChainSaw.ip						----	 	If provided, will connect to the specified IP address.\n	[run/load]	--port/ChainSaw.port					22		 	Port to connect to.\n	[run/load]	--min_length/ChainSaw.min_length	3		 	Minimum password length.\n	[run/load]	--max_length/ChainSaw.max_length	9		 	Maximum password length.\n	[run/load]	--order/ChainSaw.order					3		 	Order of the Markov chains.\n	[run/load]	--loglevel/ChainSaw.LogLevel		INFO	 	Log level. Options: INFO, WARN\n	[run/load]	--optimize_chains/ChainSaw.optimize_chains	false	Optimize chains by frequency. May speed up cracking.\n	[load]		ChainSaw.samples						Internal 	Samples to use for the Markov chains. Not recommended to change.\n	[load]		ChainSaw.pregens						Internal 	Pregenerated passwords for initial attack.\n	[load]		ChainSaw.password						Internal 	Password found.\n	[test]		--test_pass								Dessnap	 	Password to test against."
 
 	print(output_str)
 
