@@ -1,7 +1,7 @@
 The modern version of ipsum with all features. Compared to ipsum legacy:
 A. Is split into several files instead of one to avoid the character limit.
 B. Has new features such as a tree command, zerod to see a countdown until the next zeroday, support for password exploits, tracked entry deletion, and more.
-C. Updated the readmail function to work after update v0.9.7374
+C. Updated the readmail and secure functions to work after update v0.9.7374
 D. Updated database and tracking.dat files to use char(10) instead of \n for proper display.
 
 To install:
