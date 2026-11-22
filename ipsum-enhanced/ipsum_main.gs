@@ -639,8 +639,9 @@ getUserFromHandler = function (handler)
 		
     else 
         homeFile = handler.File("/home")
-        if homeFile != null then 
-            for user in homeFile.get_folders
+        homeFileFolders = homeFile.get_folders
+        if homeFile != null and homeFileFolders != null and typeof(homeFileFolders) != "string" then
+            for user in homeFileFolders
                 if user.name() == "guest" then continue
                 if user.has_permission("w") then 
                     return user.name()
@@ -1568,34 +1569,47 @@ else if typeof(result) == "file" then
 	        if result.is_folder == 1 then
 	        	files = result.get_files
 	        	folders = result.get_folders
-	        	if filename == "etc" then
-	        		for folder in folders
+                if typeof(files) == "string" then
+                    print("Issue while accessing files: " + files)
+                end if
+
+                if typeof(folders) ==  "string" then
+                    print("Issue while accessing folders: " + folders)
+                end if
+
+                if typeof(folders) != "string" and folders != null then
+                    for folder in folders
 	        			print("Folder found: " + folder.name)
 	        		end for
-	        		for file in files
+                end if
+
+                if typeof(files) != "string" and files != null then
+                    for file in files
 	        			print(file.name + " contents:\n")
 	        			print(file.get_content)
 	        		end for
-	        	else
-	        		for folder in folders
-	        			print("Folder found: " + folder.name)
-	        		end for
-	        		for file in files
-	        			print(file.name + " contents:\n")
-	        			print(file.get_content)
-	        		end for
-	        	end if
-	        else
-	        	print("Contents:\n" + result.get_content)
+                end if
+	        		
+	        	if result.get_content != null then
+                    print("File contents: " + result.get_content)
+                end if
             end if
 
         else if answer == 2 then
             if result.is_folder then
                 print("Files:")
                 contents = result.get_files
-                for file in contents
-                    print(file.name)
-                end for
+                if contents != null and typeof(contents) != "string" then
+                    for file in contents
+                        print(file.name)
+                    end for
+                
+                else if typeof(contents) == "string" then
+                    print("Issue while opening contents: " + contents)
+
+                else
+                    print("Folder is empty.")
+                end if
 
             else
                 print("Result is not a folder.")
@@ -2099,7 +2113,11 @@ secure = function(current_session, parameters_list)
     //passwd is a txt file but does not have the .txt suffix, only /etc/passwd.
     if homeOrServer.lower == "home" then
         rootFile = computer.File("/")
+        homeFile = computer.File("/home")
+        usrFile = computer.File("/usr")
+        usrBinFile = computer.File("/usr/bin")
         terminalFile = computer.File("/usr/bin/Terminal.exe")
+        binFile = computer.File("/bin")
         bashFile = computer.File("/bin/bash")
         sudoFile = computer.File("/bin/sudo")
         manualFile = computer.File("/usr/bin/Manual.exe")
@@ -2111,9 +2129,17 @@ secure = function(current_session, parameters_list)
         users = getUsers(computer)
 
         rootFile.set_owner("root", 1) //1 is for recursion
-        tryChmod(rootFile, "o-rwx", 1) 
+        tryChmod(rootFile, "o-rwx", 1) //1 is also for recursion
         tryChmod(rootFile, "g-rwx", 1)
-        tryChmod(rootFile, "u-rwx", 1)
+        tryChmod(rootFile, "g+x", 0)
+        tryChmod(rootFile, "u+x", 1)
+        tryChmod(rootFile, "u-rw", 1)
+
+        tryChmod(homeFile, "g+x", 0)
+        tryChmod(usrFile, "g+x", 0)
+        tryChmod(usrBinFile, "g+x", 1)
+        tryChmod(binFile, "g+x", 0)
+
         tryChmod(terminalFile, "g+x", 0)
         tryChmod(bashFile,"g+x", 0)
         tryChmod(sudoFile,"g+x", 0)
@@ -2125,9 +2151,19 @@ secure = function(current_session, parameters_list)
         tryChmod(adminMonitorFile, "g+x", 0)
 
         if computer.File("/home/guest") != null then
-            successOrFail = computer.File("/home/guest").delete
-            if successOrFail.len > 0 then
+            // successOrFail = computer.File("/home/guest").delete
+            successOrFail = computer.delete_user("guest", true)
+
+            // if successOrFail.len > 0 then
+            if successOrFail != 1 then
                 print("Error while deleting guest user: " + successOrFail)
+
+                successOrFail = computer.File("/home/guest").delete
+                if successOrFail.len > 0 then
+                    print("Error while deleting guest folder: " + successOrFail)
+                else
+                    print("Deleted guest home directory.")
+                end if
             
             else
                 print("Deleted guest user.")
@@ -2137,9 +2173,16 @@ secure = function(current_session, parameters_list)
         tryDeleteFile("/etc/passwd", computer)
         tryDeleteFile("/root/Config/Mail.txt", computer)
         tryDeleteFile("/root/Config/Bank.txt", computer)
+        tryDeleteFile("/root/.Trash", computer)
 
         if users.len > 0 then
             for user in users
+                userHomeFile = computer.File("/home/" + user.name)
+                userDesktopFile = computer.File("/home/" + user.name + "/Desktop")
+                tryChmod(userHomeFile, "g+x", 0)
+                tryChmod(userDesktopFile, "g+rx", 1)
+
+                tryDeleteFile("/home/" + user.name + "/.Trash", computer)
                 tryDeleteFile("/home/" + user.name + "/Config/Bank.txt", computer)
                 tryDeleteFile("/home/" + user.name + "/Config/Mail.txt", computer)
                 if computer.File("/home/" + user.name + "/Config/Browser.txt") != null then
@@ -2159,13 +2202,23 @@ secure = function(current_session, parameters_list)
         rootFile.set_owner("root", 1) //1 is for recursion
         tryChmod(rootFile, "o-rwx", 1) 
         tryChmod(rootFile, "g-rwx", 1)
-        tryChmod(rootFile, "u-rwx", 1)
+        tryChmod(rootFile, "u-rw", 1)
 
         if computer.File("/home/guest") != null then
-            successOrFail = computer.File("/home/guest").delete
-            if successOrFail.len > 0 then
+            // successOrFail = computer.File("/home/guest").delete
+            successOrFail = computer.delete_user("guest", true)
+
+            // if successOrFail.len > 0 then
+            if successOrFail != 1 then
                 print("Error while deleting guest user: " + successOrFail)
-            
+                
+                successOrFail = computer.File("/home/guest").delete
+                if successOrFail.len > 0 then
+                    print("Error while deleting guest folder: " + successOrFail)
+                else
+                    print("Deleted guest home directory.")
+                end if
+
             else
                 print("Deleted guest user.")
             end if
@@ -2174,11 +2227,16 @@ secure = function(current_session, parameters_list)
         tryDeleteFile("/etc/passwd", computer)
         tryDeleteFile("/root/Config/Mail.txt", computer)
         tryDeleteFile("/root/Config/Bank.txt", computer)
+        tryDeleteFile("/root/.Trash", computer)
 
         if users.len > 0 then
             for user in users
-                tryDeleteFile("/home/" + user + "/Config/Bank.txt", computer)
-                tryDeleteFile("/home/" + user + "/Config/Mail.txt", computer)
+                tryDeleteFile("/home/" + user.name + "/.Trash", computer)
+                tryDeleteFile("/home/" + user.name + "/Config/Bank.txt", computer)
+                tryDeleteFile("/home/" + user.name + "/Config/Mail.txt", computer)
+                if computer.File("/home/" + user.name + "/Config/Browser.txt") != null then
+                    computer.File("/home/" + user.name + "/Config/Browser.txt").chmod("g+rw")
+                end if
             end for
         end if
 
@@ -2199,6 +2257,8 @@ secure = function(current_session, parameters_list)
 
         tryChmod(binFile, "g+rwx", 1)
         tryChmod(chainsawFile, "o+rwx", 0)
+        tryChmod(chainsawFile, "g+rwx", 0)
+        tryChmod(chainsawFile, "u+rwx", 0)
         tryChmod(scanLanFile, "g+rwx", 0)
         tryChmod(metaxLib, "g+rwx", 0)
         tryChmod(cryptoLib, "g+rwx", 0)
@@ -3364,7 +3424,7 @@ while(true)
 
     else if command == "track" then
         if parameters_list.len != 2 and parameters_list.len != 1 then
-            print("Usage: [list] or [password] [ssh connection available true or false]")
+            print("Usage: [list], [del] or [password] [ssh connection available true or false]")
 
         else if parameters_list[0].lower == "list" then
             showTrackingOptions()
@@ -3373,6 +3433,10 @@ while(true)
             selectTrackingEntryToDelete()
 
         else
+            if parameters_list.len == 1 then
+                print("Error: Expected 2 parameters but only received 1.")
+            end if
+
             password = parameters_list[0]
             sshConnected = parameters_list[1]
             addToTracking(current_session, password, sshConnected)
