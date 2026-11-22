@@ -2,3 +2,4 @@ This is the legacy/standalone verison of ipsum I made prior to 0.9.7374. I've up
 (the file size limit was 160,000 characters and I was running out of space). So, this legacy version is now unsupported but available if you want the simple single-file tool still. Otherwise, use ipsum-Enhanced.
 
 the readmail function also no longer works in this build due to changes made to it in 0.9.7374. 
+the secure function also does not work and will lock your system due to the new permissions system introduced in 0.9.7374.
